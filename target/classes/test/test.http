@@ -1,0 +1,111 @@
+#POST http://localhost:8080/documents/upload
+#Content-Type: multipart/form-data; boundary=WebAppBoundary
+#
+#--WebAppBoundary
+#Content-Disposition: form-data; name="file"; filename="rag.md"
+#Content-Type: text/markdown
+#
+#RAG 是 Retrieval-Augmented Generation 的缩写。
+#它的完整流程是：先把文档切块，再把每个 chunk 转成 embedding 向量，存入向量数据库。
+#用户提问时，系统会把问题也转成向量，然后从向量数据库检索相关 chunk。
+#最后，系统把检索到的 chunk 拼进 prompt，交给大模型生成回答。
+#
+#--WebAppBoundary--
+
+
+#POST http://localhost:8080/chat
+#Content-Type: application/json
+#
+#{
+#  "question": "RAG 的完整流程是什么？",
+#  "topK": 5
+#}
+
+
+
+### 上传公司报销制度
+POST http://localhost:8080/documents/upload
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="expense-policy.md"
+Content-Type: text/markdown
+
+# 公司报销制度
+
+## 交通报销
+
+员工因公外出可以报销市内交通费用，包括地铁、公交、出租车和网约车。
+
+单次出租车或网约车费用超过 200 元时，需要在报销单中填写出行原因、起点、终点和同行人员。
+
+员工上下班通勤费用不属于报销范围，特殊情况需要部门负责人提前审批。
+
+## 餐饮报销
+
+员工因公外出产生的工作餐费用可以报销。
+
+普通工作餐标准为每人每餐不超过 80 元。
+
+客户接待餐需要提前在系统中提交接待申请，并注明客户名称、接待人数和业务目的。
+
+没有发票的餐饮费用原则上不能报销。
+
+## 住宿报销
+
+员工因公出差可以报销住宿费用。
+
+一线城市住宿标准为每人每天不超过 600 元，其他城市住宿标准为每人每天不超过 400 元。
+
+超过住宿标准的部分，需要员工自行承担，除非提前获得总监级以上审批。
+
+## 报销时限
+
+员工应在费用发生后的 30 天内提交报销申请。
+
+超过 30 天未提交的费用，需要说明逾期原因，并由部门负责人审批。
+
+超过 90 天的费用原则上不再报销。
+
+## 报销材料
+
+报销需要提供真实、完整、合法的发票。
+
+交通报销需要提供行程记录或支付凭证。
+
+住宿报销需要提供酒店发票和入住水单。
+
+餐饮报销需要提供餐饮发票，客户接待餐还需要提供已审批的接待申请。
+
+--WebAppBoundary--
+
+
+
+### 问：网约车超过 200 元怎么办
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "question": "网约车费用超过 200 元可以报销吗？需要补充什么信息？",
+  "topK": 5
+}
+
+
+### 问：一线城市住宿标准
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "question": "员工去一线城市出差，住宿每天最多能报销多少钱？",
+  "topK": 5
+}
+
+
+### 问：电脑采购报销
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "question": "员工购买电脑可以报销吗？",
+  "topK": 5
+}

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ragdemo-postgres
+    environment:
+      POSTGRES_DB: ragdemo
+      POSTGRES_USER: liyong
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "15432:5432"
+    volumes:
+      - ragdemo_pg_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  ragdemo_pg_data:

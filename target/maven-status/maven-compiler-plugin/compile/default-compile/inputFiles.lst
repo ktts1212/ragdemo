@@ -1,0 +1,16 @@
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\config\AppConfig.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\config\RagProperties.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\controller\ChatController.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\controller\DocumentController.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\controller\GlobalExceptionHandler.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\model\dto\ChatRequest.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\model\dto\ChatResponse.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\model\dto\SourceReference.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\model\dto\UploadResponse.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\model\entity\DocumentChunk.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\RagDemoApplication.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\repository\DocumentChunkRepository.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\service\ChatService.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\service\DocumentService.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\service\OpenAiClient.java
+D:\IDEAProjects\ragdemo\src\main\java\com\example\ragdemo\util\VectorUtils.java
