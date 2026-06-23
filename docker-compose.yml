@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     container_name: ragdemo-postgres
     environment:
       POSTGRES_DB: ragdemo
@@ -9,7 +9,8 @@ services:
     ports:
       - "15432:5432"
     volumes:
-      - ragdemo_pg_data:/var/lib/postgresql/data
+      # 修改这里：挂载到父级目录，让容器自动创建版本子目录
+      - ragdemo_pg_data:/var/lib/postgresql
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:

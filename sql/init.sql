@@ -1,16 +1,109 @@
+-- =============================================
+-- RAG Demo 数据库初始化脚本
+-- 4 表设计：knowledge_bases / documents / document_chunks / ingestion_tasks
+-- =============================================
+
+DROP TABLE IF EXISTS document_chunks CASCADE;
+DROP TABLE IF EXISTS ingestion_tasks CASCADE;
+DROP TABLE IF EXISTS documents CASCADE;
+DROP TABLE IF EXISTS knowledge_bases CASCADE;
+
 CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS knowledge_bases (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO knowledge_bases (id, name, description)
+VALUES (1, '默认知识库', '初始默认知识库')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval('knowledge_bases_id_seq', COALESCE((SELECT MAX(id) FROM knowledge_bases), 1));
+
+CREATE TABLE IF NOT EXISTS documents (
+    id BIGSERIAL PRIMARY KEY,
+
+    knowledge_base_id BIGINT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+
+    file_name VARCHAR(512) NOT NULL,
+    stored_file_name VARCHAR(512) NOT NULL,
+    storage_path TEXT NOT NULL,
+    file_size BIGINT NOT NULL CHECK (file_size >= 0),
+    content_type VARCHAR(255),
+    file_ext VARCHAR(32),
+    checksum VARCHAR(128),
+
+    status VARCHAR(32) NOT NULL DEFAULT 'uploaded'
+        CHECK (status IN ('uploaded', 'parsing', 'chunking', 'embedding', 'indexed', 'failed')),
+
+    progress INT NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    chunk_count INT NOT NULL DEFAULT 0 CHECK (chunk_count >= 0),
+    error_message TEXT,
+
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_documents_knowledge_base_id ON documents(knowledge_base_id);
+CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS document_chunks (
     id BIGSERIAL PRIMARY KEY,
-    doc_name VARCHAR(255) NOT NULL,
-    chunk_index INTEGER NOT NULL,
+
+    document_id BIGINT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    knowledge_base_id BIGINT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+
+    chunk_index INT NOT NULL CHECK (chunk_index >= 0),
     content TEXT NOT NULL,
-    embedding VECTOR(1024) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (doc_name, chunk_index)
+
+    page_number INT,
+    token_count INT,
+    start_offset INT,
+    end_offset INT,
+    metadata JSONB,
+
+    embedding VECTOR(1024),
+
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    UNIQUE (document_id, chunk_index)
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding
 ON document_chunks
 USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
+
+CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_knowledge_base_id ON document_chunks(knowledge_base_id);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_document_chunk_index ON document_chunks(document_id, chunk_index);
+
+CREATE TABLE IF NOT EXISTS ingestion_tasks (
+    id BIGSERIAL PRIMARY KEY,
+
+    document_id BIGINT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    knowledge_base_id BIGINT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+
+    status VARCHAR(32) NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'running', 'success', 'failed')),
+
+    current_step VARCHAR(64),
+    progress INT NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+
+    started_at TIMESTAMP,
+    finished_at TIMESTAMP,
+
+    error_message TEXT,
+
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_document_id ON ingestion_tasks(document_id);
+CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_status ON ingestion_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_created_at ON ingestion_tasks(created_at DESC);

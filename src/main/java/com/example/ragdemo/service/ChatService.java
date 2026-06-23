@@ -69,7 +69,6 @@ public class ChatService {
                         chunk.getScore(),
                         VectorUtils.preview(chunk.getContent(), 160)))
                 .toList();
-
         return new ChatResponse(answer, sources);
     }
 
