@@ -3,7 +3,7 @@ package com.example.ragdemo.controller;
 import com.example.ragdemo.common.Result;
 import com.example.ragdemo.model.dto.ChatRequest;
 import com.example.ragdemo.model.dto.ChatResponse;
-import com.example.ragdemo.service.ChatService;
+import com.example.ragdemo.service.serviceImpl.ChatService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;

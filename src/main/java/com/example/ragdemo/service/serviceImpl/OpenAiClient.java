@@ -1,4 +1,4 @@
-package com.example.ragdemo.service;
+package com.example.ragdemo.service.serviceImpl;
 
 import com.example.ragdemo.config.RagProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
