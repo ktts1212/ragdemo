@@ -1,28 +1,25 @@
 package com.example.ragdemo.controller;
 
+import com.example.ragdemo.common.Result;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleBadRequest(Exception e) {
-        return Map.of("error", e.getMessage());
+    public Result<?> handleBadRequest(Exception e) {
+        return Result.fail(400, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, String> handleInternalError(Exception e) {
-        return Map.of(
-                "error", "服务器内部错误",
-                "message", rootMessage(e)
-        );
+    public Result<?> handleInternalError(Exception e) {
+        return Result.fail(500, rootMessage(e));
     }
 
     private String rootMessage(Throwable throwable) {

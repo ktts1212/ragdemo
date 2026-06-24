@@ -1,5 +1,6 @@
 package com.example.ragdemo.controller;
 
+import com.example.ragdemo.common.Result;
 import com.example.ragdemo.model.dto.ChatRequest;
 import com.example.ragdemo.model.dto.ChatResponse;
 import com.example.ragdemo.service.ChatService;
@@ -17,7 +18,8 @@ public class ChatController {
     }
 
     @PostMapping("/chat")
-    public ChatResponse chat(@RequestBody ChatRequest request) {
-        return chatService.chat(request.getQuestion(), request.getTopK());
+    public Result<ChatResponse> chat(@RequestBody ChatRequest request) {
+        ChatResponse response = chatService.chat(request.getQuestion(), request.getTopK());
+        return Result.success(response);
     }
 }
