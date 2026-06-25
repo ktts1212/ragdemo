@@ -18,6 +18,9 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        retries: 3
+        retry.backoff.ms: 1000
     consumer:
       group-id: rag-ingestion-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

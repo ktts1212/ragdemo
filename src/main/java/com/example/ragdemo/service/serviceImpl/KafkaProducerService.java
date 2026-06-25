@@ -1,9 +1,11 @@
 package com.example.ragdemo.service.serviceImpl;
 
 import com.example.ragdemo.model.dto.DocumentIngestionMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class KafkaProducerService {
 
@@ -16,5 +18,14 @@ public class KafkaProducerService {
     }
 
     public void sendDocumentIngestionTask(DocumentIngestionMessage message) {
+        kafkaTemplate.send(TOPIC, message)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Kafka 发送失败: documentId={}", message.documentId(), ex);
+                    } else {
+                        log.info("Kafka 发送成功: documentId={}, offset={}",
+                                message.documentId(), result.getRecordMetadata().offset());
+                    }
+                });
     }
 }

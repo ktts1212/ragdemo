@@ -12,6 +12,7 @@ import com.example.ragdemo.model.vo.DocumentVO;
 import com.example.ragdemo.service.DocumentService;
 import com.example.ragdemo.service.MinioService;
 
+import lombok.var;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +22,9 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -57,7 +60,46 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public KnowledgeDocumentDto upload(MultipartFile file, Long knowledgeBaseId) {
-        return null;
+        validateFile(file);
+        checkKnowledgeBaseExists(knowledgeBaseId);
+        KnowledgeDocument document=new KnowledgeDocument();
+        String originalFilename = file.getOriginalFilename();
+        String ext = extractFileExt(originalFilename);
+        String storedFileName = generateStoredFileName(ext);
+        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String storagePath = String.format("knowledge-base/%d/%s/%s",
+                knowledgeBaseId, dateStr, storedFileName);
+
+        String checkSum = calculateSha256(file);
+        MinioUploadResult minioUploadResult = minioService.upload(file, storagePath);
+        document.setKnowledgeBaseId(knowledgeBaseId);
+        document.setFileName(originalFilename);
+        document.setStoredFileName(storedFileName);
+        document.setStoragePath(storagePath);
+        document.setFileSize(file.getSize());
+        document.setContentType(file.getContentType());
+        document.setFileExt(ext);
+        document.setChecksum(checkSum);
+        document.setStatus("uploaded");
+        document.setProgress(0);
+        document.setChunkCount(0);
+        document.setCreatedAt(LocalDateTime.now());
+        document.setUpdatedAt(LocalDateTime.now());
+        documentsMapper.insert(document);
+
+        IngestionTask task = new IngestionTask();
+        task.setDocumentId(document.getId());
+        task.setKnowledgeBaseId(knowledgeBaseId);
+        task.setStatus("pending");
+        task.setProgress(0);
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUpdatedAt(LocalDateTime.now());
+        ingestionTaskMapper.insert(task);
+
+        kafkaProducerService.sendIngestionMessage(new DocumentIngestionMessage(
+                document.getId(), knowledgeBaseId, storagePath));
+
+        return toDto(document);
     }
 
     @Override

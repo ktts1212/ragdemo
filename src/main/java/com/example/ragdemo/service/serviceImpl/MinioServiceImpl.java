@@ -3,6 +3,7 @@ package com.example.ragdemo.service.serviceImpl;
 import com.example.ragdemo.config.MinioProperties;
 import com.example.ragdemo.model.dto.MinioUploadResult;
 import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,7 +22,23 @@ public class MinioServiceImpl implements MinioService {
 
     @Override
     public MinioUploadResult upload(MultipartFile file, String objectName) {
-        return null;
+        try (InputStream inputStream = file.getInputStream()) {
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(minioProperties.getBucket())
+                    .object(objectName)
+                    .stream(inputStream, file.getSize(), -1)
+                    .contentType(file.getContentType())
+                    .build());
+
+            return new MinioUploadResult(
+                    minioProperties.getBucket(),
+                    objectName,
+                    file.getSize(),
+                    file.getContentType()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO upload failed: " + objectName, e);
+        }
     }
 
     @Override
