@@ -1,5 +1,6 @@
 package com.example.ragdemo.model.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
  * 知识库表（knowledge_bases）实体
  */
 @Data
+@TableName("knowledge_bases")
 public class KnowledgeBase {
 
     /** 主键 ID */

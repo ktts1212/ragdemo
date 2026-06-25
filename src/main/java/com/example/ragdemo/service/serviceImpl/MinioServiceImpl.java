@@ -2,6 +2,9 @@ package com.example.ragdemo.service.serviceImpl;
 
 import com.example.ragdemo.config.MinioProperties;
 import com.example.ragdemo.model.dto.MinioUploadResult;
+import com.example.ragdemo.service.MinioService;
+
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import org.springframework.stereotype.Service;
@@ -34,8 +37,7 @@ public class MinioServiceImpl implements MinioService {
                     minioProperties.getBucket(),
                     objectName,
                     file.getSize(),
-                    file.getContentType()
-            );
+                    file.getContentType());
         } catch (Exception e) {
             throw new RuntimeException("MinIO upload failed: " + objectName, e);
         }
@@ -43,7 +45,14 @@ public class MinioServiceImpl implements MinioService {
 
     @Override
     public InputStream download(String objectName) {
-        return null;
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(minioProperties.getBucket())
+                    .object(objectName)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO download failed: " + objectName, e);
+        }
     }
 
     @Override

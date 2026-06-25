@@ -1,5 +1,6 @@
 package com.example.ragdemo.model.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
  * 异常终态：failed
  */
 @Data
+@TableName("ingestion_tasks")
 public class IngestionTask {
 
     /** 主键 ID */

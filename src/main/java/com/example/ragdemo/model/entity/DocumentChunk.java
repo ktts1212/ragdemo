@@ -1,5 +1,6 @@
 package com.example.ragdemo.model.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
  * 通过 document_id 外键关联 documents 表。
  */
 @Data
+@TableName("document_chunks")
 public class DocumentChunk {
 
     /** 主键 ID */

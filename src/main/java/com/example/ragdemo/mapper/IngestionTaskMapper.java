@@ -16,4 +16,7 @@ public interface IngestionTaskMapper extends BaseMapper<IngestionTask> {
                      @Param("status") String status,
                      @Param("errorMessage") String errorMessage,
                      @Param("finishedAt") LocalDateTime finishedAt);
+
+    @Update("UPDATE ingestion_tasks SET status = 'running', started_at = NOW(), updated_at = NOW() WHERE id = #{id}")
+    int markRunning(@Param("id") Long id);
 }

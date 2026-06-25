@@ -12,7 +12,6 @@ import com.example.ragdemo.model.vo.DocumentVO;
 import com.example.ragdemo.service.DocumentService;
 import com.example.ragdemo.service.MinioService;
 
-import lombok.var;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +61,7 @@ public class DocumentServiceImpl implements DocumentService {
     public KnowledgeDocumentDto upload(MultipartFile file, Long knowledgeBaseId) {
         validateFile(file);
         checkKnowledgeBaseExists(knowledgeBaseId);
-        KnowledgeDocument document=new KnowledgeDocument();
+        KnowledgeDocument document = new KnowledgeDocument();
         String originalFilename = file.getOriginalFilename();
         String ext = extractFileExt(originalFilename);
         String storedFileName = generateStoredFileName(ext);
@@ -96,8 +95,8 @@ public class DocumentServiceImpl implements DocumentService {
         task.setUpdatedAt(LocalDateTime.now());
         ingestionTaskMapper.insert(task);
 
-        kafkaProducerService.sendIngestionMessage(new DocumentIngestionMessage(
-                document.getId(), knowledgeBaseId, storagePath));
+        kafkaProducerService.sendDocumentIngestionTask(new DocumentIngestionMessage(
+                document.getId(), knowledgeBaseId, task.getId()));
 
         return toDto(document);
     }
@@ -149,7 +148,7 @@ public class DocumentServiceImpl implements DocumentService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
             try (InputStream is = file.getInputStream();
-                 DigestInputStream dis = new DigestInputStream(is, digest)) {
+                    DigestInputStream dis = new DigestInputStream(is, digest)) {
                 byte[] buf = new byte[8192];
                 while (dis.read(buf) != -1) {
                     // 只消费流，digest 自动累积哈希
@@ -175,6 +174,20 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     private KnowledgeDocumentDto toDto(KnowledgeDocument document) {
-        return null;
+        String uploadTime = document.getCreatedAt() != null
+                ? document.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                : null;
+        return new KnowledgeDocumentDto(
+                document.getId(),
+                document.getFileName(),
+                document.getStatus(),
+                uploadTime,
+                document.getFileSize(),
+                document.getContentType(),
+                document.getProgress(),
+                document.getChunkCount(),
+                document.getErrorMessage(),
+                document.getKnowledgeBaseId()
+        );
     }
 }

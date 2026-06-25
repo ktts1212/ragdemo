@@ -14,20 +14,14 @@ import java.util.List;
 @Service
 public class TextSplitterService {
 
-    private final DocumentSplitter splitter;
+    private static final int MAX_SEGMENT_SIZE_IN_CHARS = 800;
+    private static final int MAX_OVERLAP_SIZE_IN_CHARS = 120;
 
-    public TextSplitterService() {
-        // TODO: maxChars 和 overlapChars 改为从 RagProperties 注入
-        this.splitter = DocumentSplitters.recursive(800, 120);
-    }
+    private final DocumentSplitter splitter = DocumentSplitters.recursive(
+            MAX_SEGMENT_SIZE_IN_CHARS,
+            MAX_OVERLAP_SIZE_IN_CHARS);
 
-    /**
-     * 将一段长文本切分为多个 TextSegment
-     *
-     * @param text 待切分的完整文本
-     * @return 切分后的文本段列表
-     */
-    public List<TextSegment> split(String text) {
-        return null;
+    public List<TextSegment> split(Document document) {
+        return splitter.split(document);
     }
 }

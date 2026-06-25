@@ -40,6 +40,7 @@ rag:
     base-url: https://api.deepseek.com
     api-key: sk-c81eb996c1ec44a893921d5c2b6cd7b4
     model: deepseek-chat
+    temperature: 0.2
   embedding:
     # Ollama OpenAI-compatible API address.
     base-url: http://localhost:11434/v1
@@ -52,3 +53,6 @@ rag:
     overlap-chars: 120
   retrieval:
     top-k: 5
+    min-score: 0.3
+  query-rewrite:
+    enabled: true
