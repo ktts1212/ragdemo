@@ -1,26 +1,25 @@
-// package com.example.ragdemo.controller;
+package com.example.ragdemo.controller;
 
-// import com.example.ragdemo.common.Result;
-// import com.example.ragdemo.model.dto.ChatRequest;
-// import com.example.ragdemo.model.dto.ChatResponse;
-// import com.example.ragdemo.service.serviceImpl.ChatService;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RestController;
+import com.example.ragdemo.common.Result;
+import com.example.ragdemo.model.dto.ChatRequest;
+import com.example.ragdemo.model.dto.ChatResponse;
+import com.example.ragdemo.service.ChatService;
 
-// @RestController
-// public class ChatController {
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-// private final ChatService chatService;
+@RestController
+public class ChatController {
 
-// public ChatController(ChatService chatService) {
-// this.chatService = chatService;
-// }
+    private final ChatService chatService;
 
-// @PostMapping("/chat")
-// public Result<ChatResponse> chat(@RequestBody ChatRequest request) {
-// ChatResponse response = chatService.chat(request.getQuestion(),
-// request.getTopK());
-// return Result.success(response);
-// }
-// }
+    public ChatController(ChatService chatService) {
+        this.chatService = chatService;
+    }
+
+    @PostMapping("/api/chat")
+    public Result<ChatResponse> chat(@RequestBody ChatRequest request) {
+        return Result.success(chatService.chat(request));
+    }
+}
