@@ -1,8 +1,8 @@
 package com.example.ragdemo.controller;
 
 import com.example.ragdemo.common.Result;
-import com.example.ragdemo.model.dto.ChatRequest;
-import com.example.ragdemo.model.dto.ChatResponse;
+import com.example.ragdemo.model.dto.ChatRequestDto;
+import com.example.ragdemo.model.dto.ChatResponseDto;
 import com.example.ragdemo.service.ChatService;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +19,7 @@ public class ChatController {
     }
 
     @PostMapping("/api/chat")
-    public Result<ChatResponse> chat(@RequestBody ChatRequest request) {
+    public Result<ChatResponseDto> chat(@RequestBody ChatRequestDto request) {
         return Result.success(chatService.chat(request));
     }
 }

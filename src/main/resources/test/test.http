@@ -1,111 +1,158 @@
-POST http://localhost:8080/documents/upload
-Content-Type: multipart/form-data; boundary=WebAppBoundary
+### ============================================
+### RAG Demo 完整测试脚本
+### 顺序：上传PDF → 查列表 → 多轮对话
+### ============================================
 
---WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="rag.md"
-Content-Type: text/markdown
-
-RAG 是 Retrieval-Augmented Generation 的缩写。
-它的完整流程是：先把文档切块，再把每个 chunk 转成 embedding 向量，存入向量数据库。
-用户提问时，系统会把问题也转成向量，然后从向量数据库检索相关 chunk。
-最后，系统把检索到的 chunk 拼进 prompt，交给大模型生成回答。
-
---WebAppBoundary--
+# ⚠️ 前提：docker compose up -d 已启动，Ollama bge-m3 已就绪
+# ⚠️ 每轮对话拿到 conversationId 后手动填到下一轮的 conversationId 字段
 
 
-POST http://localhost:8080/chat
+### ============================================
+### 一、上传文档
+### ============================================
+
+### 上传 ECG 论文 PDF
+POST http://localhost:8080/api/documents/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="ECG_paper.pdf"
+Content-Type: application/pdf
+
+< F:/Liyong/文献/多任务/Automated multi-class ECG arrhythmia detection using VMD and multi-task optimization.pdf
+--boundary
+Content-Disposition: form-data; name="knowledgeBaseId"
+
+1
+--boundary--
+
+
+### ============================================
+### 二、查看文档列表（等 Consumer 处理完，status 变 indexed）
+### ============================================
+
+### 查文档列表（多查几次直到 status = "indexed"）
+GET http://localhost:8080/api/documents
+
+
+### ============================================
+### 三、多轮对话测试
+### ============================================
+
+### 第 1 轮 — 首次提问（不传 conversationId，自动创建）
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{ "conversationId":"33397f32-7534-4776-b793-c72e32497530",
+  "question": "这篇论文主要研究了什么？",
+  "topK": 3,
+  "minScore":0.2
+}
+# 【验证】: conversationId 不为空，session_state 已生成（日志搜"更新状态"）
+
+
+### 第 2 轮 — 指代追问（手动填上轮返回的 conversationId）
+POST http://localhost:8080/api/chat
 Content-Type: application/json
 
 {
- "question": "RAG 的完整流程是什么？",
- "topK": 5
+  "conversationId": "33397f32-7534-4776-b793-c72e32497530",
+  "question": "它用了什么数据集？",
+  "topK": 3,
+  "minScore":0.2
+}
+# 【验证】: 日志搜"Query Rewrite"，改写后问题应包含具体数据集名
+# 【验证】: 日志搜"复用会话"，不是"新建会话"
+
+
+### 第 3 轮 — 继续指代追问
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "conversationId": "33397f32-7534-4776-b793-c72e32497530",
+  "question": "这个数据集的规模有多大？",
+  "topK": 3
+}
+# 【验证】: session_state 中的 topic/method/dataset 应有值
+
+
+### 第 4 轮 — 追问方法
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "conversationId": "33397f32-7534-4776-b793-c72e32497530",
+  "question": "这个方法的主要创新点是什么？",
+  "topK": 3
+}
+# 【验证】: Query Rewrite 应把"这个方法"替换为具体方法名
+###
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "conversationId": "33397f32-7534-4776-b793-c72e32497530",
+  "question": "帮我查找与ECG有关的文章有哪些，列出来",
+  "topK": 3
 }
 
 
 
-### 上传公司报销制度
-POST http://localhost:8080/documents/upload
-Content-Type: multipart/form-data; boundary=WebAppBoundary
+### ============================================
+### 四、验证记忆持久化
+### ============================================
 
---WebAppBoundary
-Content-Disposition: form-data; name="file"; filename="expense-policy.md"
-Content-Type: text/markdown
-
-# 公司报销制度
-
-## 交通报销
-
-员工因公外出可以报销市内交通费用，包括地铁、公交、出租车和网约车。
-
-单次出租车或网约车费用超过 200 元时，需要在报销单中填写出行原因、起点、终点和同行人员。
-
-员工上下班通勤费用不属于报销范围，特殊情况需要部门负责人提前审批。
-
-## 餐饮报销
-
-员工因公外出产生的工作餐费用可以报销。
-
-普通工作餐标准为每人每餐不超过 80 元。
-
-客户接待餐需要提前在系统中提交接待申请，并注明客户名称、接待人数和业务目的。
-
-没有发票的餐饮费用原则上不能报销。
-
-## 住宿报销
-
-员工因公出差可以报销住宿费用。
-
-一线城市住宿标准为每人每天不超过 600 元，其他城市住宿标准为每人每天不超过 400 元。
-
-超过住宿标准的部分，需要员工自行承担，除非提前获得总监级以上审批。
-
-## 报销时限
-
-员工应在费用发生后的 30 天内提交报销申请。
-
-超过 30 天未提交的费用，需要说明逾期原因，并由部门负责人审批。
-
-超过 90 天的费用原则上不再报销。
-
-## 报销材料
-
-报销需要提供真实、完整、合法的发票。
-
-交通报销需要提供行程记录或支付凭证。
-
-住宿报销需要提供酒店发票和入住水单。
-
-餐饮报销需要提供餐饮发票，客户接待餐还需要提供已审批的接待申请。
-
---WebAppBoundary--
+### 查会话列表（应列出上面的会话）
+GET http://localhost:8080/api/conversations
 
 
+### ============================================
+### 五、边界测试
+### ============================================
 
-### 问：网约车超过 200 元怎么办
-POST http://localhost:8080/chat
+### 传不存在的 conversationId（应降级为新会话，不报错）
+POST http://localhost:8080/api/chat
 Content-Type: application/json
 
 {
-  "question": "网约车费用超过 200 元可以报销吗？需要补充什么信息？",
-  "topK": 5
+  "conversationId": "fake-id-that-does-not-exist",
+  "question": "什么是RAG？",
+  "topK": 3
 }
+# 【验证】: 不报错，日志搜"会话不存在，创建新会话"
 
 
-### 问：一线城市住宿标准
-POST http://localhost:8080/chat
+### 新开一个会话（不传 conversationId）
+POST http://localhost:8080/api/chat
 Content-Type: application/json
 
 {
-  "question": "员工去一线城市出差，住宿每天最多能报销多少钱？",
-  "topK": 5
+  "question": "向量数据库有哪些常见的开源产品？",
+  "topK": 3
 }
+# 【验证】: conversationId 是新的，和之前的会话独立
 
 
-### 问：电脑采购报销
-POST http://localhost:8080/chat
-Content-Type: application/json
+### ============================================
+### 数据库验证 SQL（DBeaver 执行）
+### ============================================
 
-{
-  "question": "员工购买电脑可以报销吗？",
-  "topK": 5
-}
+#        -- 文档状态
+#        SELECT id, file_name, status, progress, chunk_count FROM documents;
+#
+#        -- chunk 向量是否入库
+#        SELECT document_id, chunk_index, LEFT(content, 60), embedding IS NOT NULL AS has_vector
+#        FROM document_chunks;
+#
+#        -- 会话记录
+#        SELECT id, title, summary IS NOT NULL AS has_summary,
+#               session_state IS NOT NULL AS has_state, created_at
+#        FROM chat_conversations ORDER BY updated_at DESC;
+#
+#        -- 消息记录
+#        SELECT conversation_id, role, LEFT(content, 50), created_at
+#        FROM chat_messages ORDER BY conversation_id, created_at;
+#
+#        -- 任务状态
+#        SELECT id, document_id, status, started_at, finished_at FROM ingestion_tasks;

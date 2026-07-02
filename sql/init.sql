@@ -1,10 +1,12 @@
 -- =============================================
 -- RAG Demo 数据库初始化脚本
--- 4 表设计：knowledge_bases / documents / document_chunks / ingestion_tasks
+-- 6 表设计：knowledge_bases / documents / document_chunks / ingestion_tasks / chat_conversations / chat_messages
 -- =============================================
 
 DROP TABLE IF EXISTS document_chunks CASCADE;
 DROP TABLE IF EXISTS ingestion_tasks CASCADE;
+DROP TABLE IF EXISTS chat_messages CASCADE;
+DROP TABLE IF EXISTS chat_conversations CASCADE;
 DROP TABLE IF EXISTS documents CASCADE;
 DROP TABLE IF EXISTS knowledge_bases CASCADE;
 
@@ -107,3 +109,30 @@ CREATE TABLE IF NOT EXISTS ingestion_tasks (
 CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_document_id ON ingestion_tasks(document_id);
 CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_status ON ingestion_tasks(status);
 CREATE INDEX IF NOT EXISTS idx_ingestion_tasks_created_at ON ingestion_tasks(created_at DESC);
+
+-- =============================================
+-- 短期记忆：会话与消息表
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS chat_conversations (
+    id VARCHAR(64) PRIMARY KEY,
+    knowledge_base_id BIGINT,
+    model_key VARCHAR(64),
+    title VARCHAR(255),
+    summary TEXT,
+    session_state JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id VARCHAR(64) NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+    content TEXT NOT NULL,
+    token_count INT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation
+    ON chat_messages(conversation_id, created_at);

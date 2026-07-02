@@ -1,0 +1,1004 @@
+# RAG 短期记忆设计 Skill
+
+## 1. 适用场景
+
+本 Skill 适用于 Spring Boot + LangChain4j + PostgreSQL + pgvector 的 RAG 智能问答系统，用于实现“当前会话内的短期记忆”。
+
+短期记忆主要解决多轮问答中的上下文承接问题，例如：
+
+```text
+Q1：这篇论文用了什么方法检测心律失常？
+A1：论文使用了 CNN-LSTM 方法。
+
+Q2：这个方法有什么优点？
+```
+
+系统需要知道第二轮中的“这个方法”指的是上一轮提到的 `CNN-LSTM 方法`。
+
+---
+
+## 2. 核心结论
+
+短期记忆不是让模型真正记住，而是后端按 `conversationId` 保存当前会话历史，并在下一次请求时重新组装到 `ChatRequest` 中。
+
+如果项目希望更工程化、更拿得出手，短期记忆建议直接持久化到 PostgreSQL，而不是只存在内存中。
+
+推荐方案：
+
+```text
+PostgreSQL 持久化会话
++
+最近 8 条原始消息
++
+500 字以内滚动摘要
++
+JSON 结构化会话状态
++
+基于记忆的 Query Rewrite
+```
+
+---
+
+## 3. 短期记忆是否需要存数据库
+
+短期记忆可以存在内存，也可以存在数据库。
+
+### 3.1 内存方案
+
+特点：
+
+```text
+优点：实现简单、速度快
+缺点：项目重启后记忆丢失，无法查看历史会话，不适合正式项目
+```
+
+适合：
+
+```text
+快速 demo
+本地测试
+验证多轮对话逻辑
+```
+
+### 3.2 数据库方案
+
+特点：
+
+```text
+优点：项目重启不丢，可做历史会话列表，可调试，可追踪问题，可扩展多用户隔离
+缺点：实现稍复杂，需要建表、Mapper、Service
+```
+
+适合：
+
+```text
+正式 RAG 项目
+课程项目
+毕业设计
+可展示系统
+后续需要会话列表和历史记录
+```
+
+本项目推荐直接使用 PostgreSQL 持久化短期记忆。
+
+---
+
+## 4. 短期记忆和长期记忆的区别
+
+```text
+短期记忆：
+当前 conversationId 内的上下文。
+用于理解“它”“这个方法”“上面提到的模型”等追问。
+
+长期记忆：
+跨会话保存的重要用户偏好、项目状态、稳定事实。
+例如用户偏好中文回答、默认模型是 DeepSeek、项目技术栈是 Spring Boot + LangChain4j。
+```
+
+本 Skill 只关注短期记忆。
+
+---
+
+## 5. 推荐短期记忆结构
+
+短期记忆不要只做简单滑动窗口，建议采用混合结构：
+
+```text
+Short-Term Memory
+├── Recent Messages：最近若干条原始对话
+├── Rolling Summary：较早对话的滚动摘要
+├── Session State：当前会话结构化状态
+└── Query Rewrite：结合记忆改写当前问题
+```
+
+各部分作用：
+
+```text
+Recent Messages：
+保留最近细节，适合处理连续追问。
+
+Rolling Summary：
+压缩较早对话，避免旧上下文完全丢失。
+
+Session State：
+保存当前讨论对象，例如当前论文、当前方法、当前数据集、当前疾病。
+
+Query Rewrite：
+把“这个方法有什么优点？”改写成“这篇论文中 CNN-LSTM 方法有什么优点？”。
+```
+
+---
+
+## 6. 数据库表设计
+
+### 6.1 chat_conversations
+
+用于保存会话级信息、摘要和结构化状态。
+
+```sql
+CREATE TABLE chat_conversations (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64),
+    knowledge_base_id BIGINT,
+    model_key VARCHAR(64),
+    title VARCHAR(255),
+
+    summary TEXT,
+    session_state JSONB,
+
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+```
+
+字段说明：
+
+```text
+id：
+conversationId，会话唯一标识。
+
+user_id：
+用户 ID，后续支持多用户时使用。
+
+knowledge_base_id：
+当前会话默认绑定的知识库 ID。
+
+model_key：
+当前会话使用的模型，例如 deepseek、zhipu。
+
+title：
+会话标题，可后续自动生成。
+
+summary：
+滚动摘要，用于保存较早对话的核心内容。
+
+session_state：
+结构化会话状态，JSONB 格式。
+```
+
+session_state 示例：
+
+```json
+{
+  "currentPaper": "某心律失常检测论文",
+  "currentMethod": "CNN-LSTM",
+  "currentDataset": "MIT-BIH",
+  "currentTask": "arrhythmia detection",
+  "currentDisease": "arrhythmia",
+  "currentMetric": "F1-score"
+}
+```
+
+---
+
+### 6.2 chat_messages
+
+用于保存当前会话的原始消息。
+
+```sql
+CREATE TABLE chat_messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id VARCHAR(64) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    token_count INT,
+    created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE INDEX idx_chat_messages_conversation
+ON chat_messages(conversation_id, created_at);
+```
+
+role 建议使用：
+
+```text
+user
+assistant
+system
+```
+
+通常只需要保存：
+
+```text
+user：用户原始问题
+assistant：模型回答
+```
+
+不建议保存完整 RAG prompt，因为 prompt 中包含大量检索资料，长期保存会导致上下文膨胀。
+
+---
+
+## 7. 请求和响应 DTO 修改
+
+### 7.1 ChatRequestDto
+
+```java
+public class ChatRequestDto {
+
+    private String conversationId;
+
+    private String question;
+
+    private Long knowledgeBaseId;
+
+    private Integer topK;
+
+    private Double minScore;
+
+    private String model;
+
+    // getter / setter
+}
+```
+
+说明：
+
+```text
+conversationId：
+第一次请求可以不传，后端自动生成。
+后续追问需要带上同一个 conversationId。
+```
+
+请求示例：
+
+```json
+{
+  "conversationId": "conv-10001",
+  "question": "这个方法有什么优点？",
+  "topK": 5,
+  "knowledgeBaseId": 1,
+  "model": "deepseek"
+}
+```
+
+---
+
+### 7.2 ChatResponseDto
+
+```java
+public class ChatResponseDto {
+
+    private String conversationId;
+
+    private String answer;
+
+    private String rewrittenQuestion;
+
+    private List<SourceReference> sources;
+
+    // 可选：开发调试使用
+    private String memorySummary;
+
+    // getter / setter
+}
+```
+
+响应示例：
+
+```json
+{
+  "conversationId": "conv-10001",
+  "rewrittenQuestion": "这篇论文中 CNN-LSTM 方法有什么优点？",
+  "answer": "根据资料1和资料2，该方法的优点是……",
+  "sources": []
+}
+```
+
+---
+
+## 8. 推荐包结构
+
+在原有 RAG 项目中新增：
+
+```text
+com.example.ragdemo
+├── memory/
+│   ├── ConversationMemoryService.java
+│   ├── ConversationMemoryServiceImpl.java
+│   ├── MemoryAssembler.java
+│   ├── MemorySummaryService.java
+│   ├── SessionStateService.java
+│   └── QueryRewriteService.java
+│
+├── model/entity/
+│   ├── ChatConversation.java
+│   └── ChatMessage.java
+│
+├── model/dto/
+│   ├── ConversationMemory.java
+│   └── SessionState.java
+│
+├── mapper/
+│   ├── ChatConversationMapper.java
+│   └── ChatMessageMapper.java
+│
+└── resources/mapper/
+    ├── ChatConversationMapper.xml
+    └── ChatMessageMapper.xml
+```
+
+职责说明：
+
+```text
+ConversationMemoryService：
+统一管理会话创建、记忆读取、消息保存、摘要更新、状态更新。
+
+MemoryAssembler：
+将 systemPrompt、summary、sessionState、recentMessages、ragPrompt 组装为 ChatRequest messages。
+
+MemorySummaryService：
+负责滚动更新会话摘要。
+
+SessionStateService：
+负责从当前问答中抽取当前论文、方法、数据集、任务、疾病、指标等状态。
+
+QueryRewriteService：
+结合摘要、状态和最近消息，将当前追问改写为独立问题。
+```
+
+---
+
+## 9. 核心对象设计
+
+### 9.1 ConversationMemory
+
+```java
+public class ConversationMemory {
+
+    private String conversationId;
+
+    private String summary;
+
+    private SessionState sessionState;
+
+    private List<ChatMessage> recentMessages;
+
+    // getter / setter
+}
+```
+
+### 9.2 SessionState
+
+```java
+public class SessionState {
+
+    private String currentPaper;
+
+    private String currentMethod;
+
+    private String currentDataset;
+
+    private String currentTask;
+
+    private String currentDisease;
+
+    private String currentMetric;
+
+    // getter / setter
+}
+```
+
+SessionState 不需要一开始设计得过度复杂，重点保存当前会话中最常被追问指代的对象。
+
+---
+
+## 10. ConversationMemoryService 设计
+
+接口：
+
+```java
+public interface ConversationMemoryService {
+
+    String resolveConversationId(String conversationId,
+                                 Long knowledgeBaseId,
+                                 String modelKey);
+
+    ConversationMemory loadMemory(String conversationId);
+
+    void saveTurn(String conversationId,
+                  String userQuestion,
+                  String assistantAnswer);
+
+    void updateMemoryAfterTurn(String conversationId,
+                               String userQuestion,
+                               String assistantAnswer);
+}
+```
+
+实现伪代码：
+
+```java
+@Service
+public class ConversationMemoryServiceImpl implements ConversationMemoryService {
+
+    private final ChatConversationMapper conversationMapper;
+    private final ChatMessageMapper messageMapper;
+    private final MemorySummaryService memorySummaryService;
+    private final SessionStateService sessionStateService;
+
+    @Override
+    public String resolveConversationId(String conversationId,
+                                        Long knowledgeBaseId,
+                                        String modelKey) {
+        if (conversationId != null && !conversationId.isBlank()) {
+            return conversationId;
+        }
+
+        String newId = UUID.randomUUID().toString();
+
+        conversationMapper.insertConversation(
+                newId,
+                knowledgeBaseId,
+                modelKey
+        );
+
+        return newId;
+    }
+
+    @Override
+    public ConversationMemory loadMemory(String conversationId) {
+        ChatConversation conversation =
+                conversationMapper.selectById(conversationId);
+
+        List<ChatMessageEntity> recentEntities =
+                messageMapper.selectRecentMessages(conversationId, 8);
+
+        ConversationMemory memory = new ConversationMemory();
+        memory.setConversationId(conversationId);
+        memory.setSummary(conversation.getSummary());
+        memory.setSessionState(parseState(conversation.getSessionState()));
+        memory.setRecentMessages(toChatMessages(recentEntities));
+
+        return memory;
+    }
+
+    @Override
+    public void saveTurn(String conversationId,
+                         String userQuestion,
+                         String assistantAnswer) {
+        messageMapper.insertMessage(conversationId, "user", userQuestion);
+        messageMapper.insertMessage(conversationId, "assistant", assistantAnswer);
+    }
+
+    @Override
+    public void updateMemoryAfterTurn(String conversationId,
+                                      String userQuestion,
+                                      String assistantAnswer) {
+        memorySummaryService.updateSummary(conversationId, userQuestion, assistantAnswer);
+        sessionStateService.updateSessionState(conversationId, userQuestion, assistantAnswer);
+    }
+}
+```
+
+---
+
+## 11. Query Rewrite 设计
+
+RAG 短期记忆中，Query Rewrite 非常关键。
+
+用户追问：
+
+```text
+这个方法有什么优点？
+```
+
+不能直接用于向量检索。应结合会话记忆改写为：
+
+```text
+这篇论文中用于心律失常检测的 CNN-LSTM 方法有什么优点？
+```
+
+伪代码：
+
+```java
+public String rewrite(ConversationMemory memory, String question, String modelKey) {
+
+    String prompt = """
+            你是一个 RAG 检索问题改写器。
+            请根据会话摘要、会话状态和最近对话，将当前问题改写成一个语义完整、适合向量检索的独立问题。
+
+            要求：
+            1. 不要回答问题。
+            2. 只输出改写后的问题。
+            3. 如果当前问题已经完整，则原样输出。
+            4. 保留论文名、方法名、疾病名、数据集、指标等关键信息。
+            5. 不要添加历史中没有的信息。
+
+            【会话摘要】
+            %s
+
+            【会话状态】
+            %s
+
+            【最近对话】
+            %s
+
+            【当前问题】
+            %s
+
+            【改写后的独立问题】
+            """.formatted(
+            memory.getSummary(),
+            toJson(memory.getSessionState()),
+            formatMessages(memory.getRecentMessages()),
+            question
+    );
+
+    ChatModel model = chatModelFactory.getModel(modelKey);
+
+    return model.chat(prompt).trim();
+}
+```
+
+设计原则：
+
+```text
+检索使用 rewrittenQuestion。
+最终回答仍围绕用户原始 question。
+```
+
+---
+
+## 12. MemoryAssembler 设计
+
+MemoryAssembler 负责将记忆信息组装进 ChatRequest。
+
+```java
+public List<ChatMessage> buildMessages(
+        String systemPrompt,
+        ConversationMemory memory,
+        String ragPrompt
+) {
+    List<ChatMessage> messages = new ArrayList<>();
+
+    messages.add(SystemMessage.from(systemPrompt));
+
+    if (memory.getSummary() != null && !memory.getSummary().isBlank()) {
+        messages.add(SystemMessage.from("""
+                以下是当前会话的历史摘要，仅用于理解上下文，不代表知识库事实：
+                %s
+                """.formatted(memory.getSummary())));
+    }
+
+    if (memory.getSessionState() != null) {
+        messages.add(SystemMessage.from("""
+                以下是当前会话状态，用于解析用户追问中的指代：
+                %s
+                """.formatted(toJson(memory.getSessionState()))));
+    }
+
+    messages.addAll(memory.getRecentMessages());
+
+    messages.add(UserMessage.from(ragPrompt));
+
+    return messages;
+}
+```
+
+注意：
+
+```text
+历史摘要和会话状态只用于理解上下文。
+RAG 回答的事实依据仍然应该来自知识库检索结果。
+```
+
+---
+
+## 13. 滚动摘要设计
+
+滚动摘要用于压缩较早对话，避免上下文越来越长。
+
+更新方式：
+
+```text
+旧 summary + 本轮 question + 本轮 answer → 新 summary
+```
+
+伪代码：
+
+```java
+public void updateSummary(String conversationId,
+                          String question,
+                          String answer) {
+
+    ChatConversation conversation =
+            conversationMapper.selectById(conversationId);
+
+    String oldSummary = conversation.getSummary();
+
+    String prompt = """
+            请更新当前会话摘要。
+
+            要求：
+            1. 保留对后续对话有用的信息。
+            2. 删除闲聊、重复内容和无关细节。
+            3. 不要编造。
+            4. 摘要控制在 500 字以内。
+            5. 重点保留当前讨论的论文、方法、数据集、任务、指标、结论。
+
+            【旧摘要】
+            %s
+
+            【本轮用户问题】
+            %s
+
+            【本轮助手回答】
+            %s
+
+            【更新后的摘要】
+            """.formatted(oldSummary, question, answer);
+
+    String newSummary = chatModelFactory
+            .getDefaultModel()
+            .chat(prompt)
+            .trim();
+
+    conversationMapper.updateSummary(conversationId, newSummary);
+}
+```
+
+摘要建议控制在：
+
+```text
+300～500 中文字
+```
+
+---
+
+## 14. 结构化会话状态设计
+
+结构化会话状态用于解决追问中的指代问题。
+
+例如：
+
+```text
+这个方法有什么缺点？
+```
+
+如果 `session_state` 中有：
+
+```json
+{
+  "currentMethod": "CNN-LSTM",
+  "currentTask": "心律失常检测"
+}
+```
+
+系统就能更准确地改写问题。
+
+状态更新伪代码：
+
+```java
+public void updateSessionState(String conversationId,
+                               String question,
+                               String answer) {
+
+    String oldStateJson =
+            conversationMapper.selectSessionState(conversationId);
+
+    String prompt = """
+            请根据旧会话状态和本轮问答，更新会话状态 JSON。
+
+            只输出 JSON，不要输出解释。
+
+            字段包括：
+            - currentPaper
+            - currentMethod
+            - currentDataset
+            - currentTask
+            - currentDisease
+            - currentMetric
+
+            如果没有相关信息，字段值为 null。
+            不要编造历史中没有的信息。
+
+            【旧状态】
+            %s
+
+            【本轮用户问题】
+            %s
+
+            【本轮助手回答】
+            %s
+
+            【新状态 JSON】
+            """.formatted(oldStateJson, question, answer);
+
+    String newStateJson = chatModelFactory
+            .getDefaultModel()
+            .chat(prompt)
+            .trim();
+
+    conversationMapper.updateSessionState(conversationId, newStateJson);
+}
+```
+
+---
+
+## 15. ChatServiceImpl 主链路伪代码
+
+完整短期记忆 RAG 链路：
+
+```java
+public ChatResponseDto chat(ChatRequestDto request) {
+
+    validateRequest(request);
+
+    String modelKey = resolveModelKey(request.getModel());
+
+    Long knowledgeBaseId = resolveKnowledgeBaseId(request.getKnowledgeBaseId());
+
+    String conversationId =
+            memoryService.resolveConversationId(
+                    request.getConversationId(),
+                    knowledgeBaseId,
+                    modelKey
+            );
+
+    ConversationMemory memory =
+            memoryService.loadMemory(conversationId);
+
+    String rewrittenQuestion =
+            queryRewriteService.rewrite(
+                    memory,
+                    request.getQuestion(),
+                    modelKey
+            );
+
+    float[] queryVector =
+            embeddingModel.embed(rewrittenQuestion).content().vector();
+
+    String pgVector =
+            toPgVectorString(queryVector);
+
+    List<RetrievedChunkDto> chunks =
+            documentChunkMapper.searchSimilarChunks(
+                    knowledgeBaseId,
+                    pgVector,
+                    topK
+            );
+
+    List<RetrievedChunkDto> filteredChunks =
+            chunks.stream()
+                    .filter(chunk -> chunk.getScore() >= minScore)
+                    .toList();
+
+    String context =
+            buildContext(filteredChunks);
+
+    String ragPrompt =
+            buildPrompt(
+                    request.getQuestion(),
+                    rewrittenQuestion,
+                    context
+            );
+
+    String systemPrompt =
+            loadSystemPrompt();
+
+    List<ChatMessage> messages =
+            memoryAssembler.buildMessages(
+                    systemPrompt,
+                    memory,
+                    ragPrompt
+            );
+
+    ChatRequest chatRequest =
+            ChatRequest.builder()
+                    .messages(messages)
+                    .build();
+
+    ChatModel chatModel =
+            chatModelFactory.getModel(modelKey);
+
+    ChatResponse response =
+            chatModel.chat(chatRequest);
+
+    String answer =
+            response.aiMessage().text();
+
+    memoryService.saveTurn(
+            conversationId,
+            request.getQuestion(),
+            answer
+    );
+
+    memoryService.updateMemoryAfterTurn(
+            conversationId,
+            request.getQuestion(),
+            answer
+    );
+
+    return ChatResponseDto.builder()
+            .conversationId(conversationId)
+            .answer(answer)
+            .rewrittenQuestion(rewrittenQuestion)
+            .sources(toSources(filteredChunks))
+            .build();
+}
+```
+
+---
+
+## 16. application.yml 推荐配置
+
+```yaml
+rag:
+  memory:
+    enabled: true
+
+    # 最近原始消息数量，UserMessage 和 AiMessage 都算
+    max-recent-messages: 8
+
+    # 是否启用滚动摘要
+    summary-enabled: true
+    summary-max-chars: 500
+
+    # 是否启用结构化会话状态
+    session-state-enabled: true
+
+    # 是否用记忆做问题改写
+    query-rewrite-with-memory: true
+```
+
+对应 `RagProperties`：
+
+```java
+private MemoryConfig memory;
+
+public static class MemoryConfig {
+
+    private Boolean enabled = true;
+
+    private Integer maxRecentMessages = 8;
+
+    private Boolean summaryEnabled = true;
+
+    private Integer summaryMaxChars = 500;
+
+    private Boolean sessionStateEnabled = true;
+
+    private Boolean queryRewriteWithMemory = true;
+
+    // getter / setter
+}
+```
+
+---
+
+## 17. 关键实现原则
+
+### 17.1 保存原始 question，不保存完整 RAG prompt
+
+应保存：
+
+```text
+用户原始问题
+模型最终回答
+```
+
+不应保存：
+
+```text
+包含大量 context 的完整 RAG prompt
+```
+
+原因：
+
+```text
+完整 RAG prompt 包含检索资料，内容很长。
+如果每轮都保存 prompt，后续上下文会快速膨胀，导致 token 爆炸。
+```
+
+---
+
+### 17.2 检索用 rewrittenQuestion，回答用原始 question
+
+流程：
+
+```text
+history + summary + state + question
+    ↓
+rewrittenQuestion
+    ↓
+embedding 检索
+    ↓
+context + 原始 question
+    ↓
+生成最终回答
+```
+
+这样既保证检索准确，又保证回答贴近用户真实问题。
+
+---
+
+### 17.3 摘要和状态不是事实来源
+
+会话摘要和会话状态只用于理解上下文，不能替代知识库资料。
+
+RAG 回答的事实依据仍然应该来自：
+
+```text
+pgvector 检索出的 chunks
+```
+
+Prompt 中可以明确写：
+
+```text
+历史摘要和会话状态仅用于理解上下文，不代表知识库事实。
+回答必须以参考资料为准。
+```
+
+---
+
+## 18. 最终推荐链路
+
+```text
+POST /api/chat
+  ↓
+1. 参数校验
+  ↓
+2. resolve conversationId
+  ↓
+3. loadMemory(conversationId)
+   ├── rollingSummary
+   ├── sessionState
+   └── recentMessages
+  ↓
+4. queryRewrite(memory + question)
+  ↓
+5. embedding(rewrittenQuestion)
+  ↓
+6. pgvector 检索 chunks
+  ↓
+7. minScore 过滤
+  ↓
+8. buildContext(chunks)
+  ↓
+9. buildRagPrompt(originalQuestion + rewrittenQuestion + context)
+  ↓
+10. MemoryAssembler 组装 ChatRequest
+    ├── SystemMessage(systemPrompt)
+    ├── SystemMessage(summary)
+    ├── SystemMessage(sessionState)
+    ├── recentMessages
+    └── UserMessage(ragPrompt)
+  ↓
+11. ChatModelFactory.getModel(modelKey)
+  ↓
+12. chatModel.chat(chatRequest)
+  ↓
+13. saveTurn(originalQuestion, answer)
+  ↓
+14. updateSummary()
+  ↓
+15. updateSessionState()
+  ↓
+16. 返回 answer + sources + conversationId + rewrittenQuestion
+```
+
+---
+
+## 19. 一句话总结
+
+短期记忆建议持久化到 PostgreSQL，并采用“最近原始消息 + 滚动摘要 + 结构化会话状态 + 记忆增强 Query Rewrite”的混合方案。这样既能支持多轮追问，又能控制上下文长度，还能让 RAG 检索更准确，是一个比较完整、工程化、拿得出手的短期记忆设计。

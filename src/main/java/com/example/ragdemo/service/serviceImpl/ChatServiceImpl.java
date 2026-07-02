@@ -1,16 +1,27 @@
 package com.example.ragdemo.service.serviceImpl;
 
+import com.example.ragdemo.config.ChatModelFactory;
+import com.example.ragdemo.config.RagProperties;
 import com.example.ragdemo.mapper.DocumentChunkMapper;
-import com.example.ragdemo.model.dto.ChatRequest;
-import com.example.ragdemo.model.dto.ChatResponse;
+import com.example.ragdemo.memory.ConversationMemoryService;
+import com.example.ragdemo.model.dto.ChatRequestDto;
+import com.example.ragdemo.model.dto.ChatResponseDto;
 import com.example.ragdemo.model.dto.RetrievedChunkDto;
 import com.example.ragdemo.model.dto.SourceReference;
 import com.example.ragdemo.service.ChatService;
+import com.example.ragdemo.model.entity.ConversationMessage;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -18,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,89 +40,149 @@ import java.util.List;
  * <p>
  * 依赖：
  * <ul>
- *   <li>{@link EmbeddingModel}       — 问题向量化（替代手写 OpenAiClient.embed）</li>
- *   <li>{@link ChatLanguageModel}    — 根据 Prompt 生成答案（替代手写 OpenAiClient.chat）</li>
- *   <li>{@link DocumentChunkMapper}  — pgvector 相似度检索</li>
+ * <li>{@link EmbeddingModel} — 问题向量化（替代手写 OpenAiClient.embed）</li>
+ * <li>{@link dev.langchain4j.model.chat.ChatLanguageModel} — 通过
+ * ChatModelFactory 动态选择</li>
+ * <li>{@link DocumentChunkMapper} — pgvector 相似度检索</li>
  * </ul>
  */
+@Slf4j
 @Service
 public class ChatServiceImpl implements ChatService {
 
     // ==================== 默认值常量 ====================
     private static final Long DEFAULT_KNOWLEDGE_BASE_ID = 1L;
-    private static final int DEFAULT_TOP_K = 5;
-    private static final double DEFAULT_MIN_SCORE = 0.60;
+    private static final int MAX_RECENT_MESSAGES = 16; // 8 轮对话 × 2
 
     // ==================== 依赖注入 ====================
     private final EmbeddingModel embeddingModel;
-    private final ChatLanguageModel chatLanguageModel;
+    private final ChatModelFactory chatModelFactory;
     private final DocumentChunkMapper documentChunkMapper;
+    private final ConversationMemoryService conversationMemoryService;
+    private final RagProperties ragProperties;
 
-    /**
-     * Prompt 模板，从 resources/prompt/system-prompt.txt 加载。
-     * 包含 {context} 和 {question} 占位符，运行时由 buildPrompt() 替换。
-     */
-    private String promptTemplate;
+    /** System prompt 模板 */
+    private String systemPromptTemplate;
+
+    /** User prompt 模板（含 {summary} {context} {question} 占位符） */
+    private String userPromptTemplate;
 
     @Value("classpath:prompt/system-prompt.txt")
-    private Resource promptResource;
+    private Resource systemPromptResource;
+
+    @Value("classpath:prompt/user-prompt.txt")
+    private Resource userPromptResource;
 
     public ChatServiceImpl(EmbeddingModel embeddingModel,
-                           ChatLanguageModel chatLanguageModel,
-                           DocumentChunkMapper documentChunkMapper) {
+            ChatModelFactory chatModelFactory,
+            DocumentChunkMapper documentChunkMapper,
+            ConversationMemoryService conversationMemoryService,
+            RagProperties ragProperties) {
         this.embeddingModel = embeddingModel;
-        this.chatLanguageModel = chatLanguageModel;
+        this.chatModelFactory = chatModelFactory;
         this.documentChunkMapper = documentChunkMapper;
+        this.conversationMemoryService = conversationMemoryService;
+        this.ragProperties = ragProperties;
     }
 
     @PostConstruct
-    private void loadPromptTemplate() throws IOException {
-        this.promptTemplate = promptResource.getContentAsString(StandardCharsets.UTF_8);
+    private void loadPrompts() throws IOException {
+        this.systemPromptTemplate = systemPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        this.userPromptTemplate = userPromptResource.getContentAsString(StandardCharsets.UTF_8);
     }
 
     // ==================== 主流程 ====================
 
     @Override
-    public ChatResponse chat(ChatRequest request) {
-        validateRequest(request);                    // 1. 参数校验
+    public ChatResponseDto chat(ChatRequestDto request) {
+        validateRequest(request); // 1. 参数校验
 
-        // TODO 2. 提取并填充默认值                    — kbId/topK/minScore 为 null 时用默认值
+        // 2. 提取并填充默认值 — kbId/topK/minScore 为 null 时用默认值
         Long knowledgeBaseId = request.getKnowledgeBaseId() != null
-                ? request.getKnowledgeBaseId() : DEFAULT_KNOWLEDGE_BASE_ID;
-        int topK = request.getTopK() != null ? request.getTopK() : DEFAULT_TOP_K;
-        double minScore = request.getMinScore() != null ? request.getMinScore() : DEFAULT_MIN_SCORE;
+                ? request.getKnowledgeBaseId()
+                : DEFAULT_KNOWLEDGE_BASE_ID;
+        int topK = request.getTopK() != null ? request.getTopK() : ragProperties.getRetrieval().getTopK();
+        double minScore = request.getMinScore() != null ? request.getMinScore()
+                : ragProperties.getRetrieval().getMinScore();
 
-        // TODO 3. embeddingModel.embed(question)     — 问题向量化
-        float[] questionVector = embeddingModel.embed(request.getQuestion())
+        // 2.1 解析 conversationId（前端传了则校验，没传则新建）
+        String conversationId = conversationMemoryService.resolveConversationId(
+                request.getConversationId(), knowledgeBaseId, request.getModel());
+
+        // 2.2 加载滑动窗口 — 最近 8 轮历史消息（倒序）
+        List<ConversationMessage> recentMessages = conversationMemoryService.loadRecentMessages(conversationId,
+                MAX_RECENT_MESSAGES);
+
+        // 2.3 加载滚动摘要（null = 未生成）
+        String summary = conversationMemoryService.getSummary(conversationId);
+
+        // 2.4 加载结构化状态（第一轮后就有值）
+        String sessionState = conversationMemoryService.getSessionState(conversationId);
+
+        // 2.5 Query Rewrite：指代消解后的问题用于向量检索
+        String questionForSearch = conversationMemoryService.rewriteQuestion(
+                summary, sessionState, recentMessages, request.getQuestion());
+        log.info("改写后的问题为:{}", questionForSearch);
+        // 3. embeddingModel.embed(question) — 问题向量化（用改写后的问题）
+        float[] questionVector = embeddingModel.embed(questionForSearch)
                 .content().vector();
 
-        // TODO 4. toPgVectorString(vector)           — float[] → "[0.12, -0.34, ...]"
+        // 4. toPgVectorString(vector) — float[] → "[0.12, -0.34, ...]"
         String questionEmbedding = toPgVectorString(questionVector);
 
-        // TODO 5. documentChunkMapper.searchSimilarChunks() — pgvector 检索 topK
+        // 5. documentChunkMapper.searchSimilarChunks() — pgvector 检索 topK
         List<RetrievedChunkDto> retrievedChunks = documentChunkMapper
                 .searchSimilarChunks(knowledgeBaseId, questionEmbedding, topK);
 
-        // TODO 6. filter(score >= minScore)          — 过滤低相似度 chunk
+        // 6. filter(score >= minScore) — 过滤低相似度 chunk
         List<RetrievedChunkDto> validChunks = retrievedChunks.stream()
                 .filter(chunk -> chunk.getScore() != null && chunk.getScore() >= minScore)
                 .toList();
 
-        // TODO 7. isEmpty? → return "无法确定"        — 无有效资料时拒绝编造
+        // 7. isEmpty? → return "无法确定" — 无有效资料时拒绝编造
         if (validChunks.isEmpty()) {
-            return new ChatResponse("根据当前知识库资料无法确定。", List.of());
+            return new ChatResponseDto("根据当前知识库资料无法确定。", List.of(), conversationId);
         }
 
-        // TODO 8. buildContext(chunks)               — 拼接【资料1】【资料2】...
+        // 8. buildContext(chunks) — 拼接【资料1】【资料2】...
         String context = buildContext(validChunks);
 
-        // TODO 9. buildPrompt(question, context)     — 严格 Prompt 模板
-        String prompt = buildPrompt(request.getQuestion(), context);
+        // 9. 组装 ChatRequest
+        // 顺序：SystemMessage(规则) → 历史消息(8轮) → UserMessage(摘要+资料+问题+要求)
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(SystemMessage.from(systemPromptTemplate));
 
-        // TODO 10. chatLanguageModel.chat(prompt)    — 调用 LLM 生成答案
-        String answer = chatLanguageModel.chat(prompt);
+        // 历史消息：数据库倒序 → 反转正序注入
+        for (int i = recentMessages.size() - 1; i >= 0; i--) {
+            ConversationMessage msg = recentMessages.get(i);
+            if ("user".equals(msg.getRole())) {
+                messages.add(UserMessage.from(msg.getContent()));
+            } else if ("assistant".equals(msg.getRole())) {
+                messages.add(AiMessage.from(msg.getContent()));
+            }
+        }
 
-        // TODO 11. 组装 SourceReference 列表
+        // 构造当前轮 UserMessage：模板替换占位符
+        String userMessage = userPromptTemplate
+                .replace("{summary}", summary != null && !summary.isBlank()
+                        ? "【会话摘要】\n" + summary + "\n\n"
+                        : "")
+                .replace("{sessionState}", sessionState != null && !sessionState.isBlank()
+                        ? "【结构化状态】\n" + sessionState + "\n\n"
+                        : "")
+                .replace("{context}", context)
+                .replace("{question}", request.getQuestion());
+        log.info("构造的非历史记录用户消息是:{}", userMessage);
+        messages.add(UserMessage.from(userMessage));
+
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(messages)
+                .build();
+
+        // 10. chatModelFactory.getModel().chat(prompt) — 调用 LLM 生成答案
+        ChatResponse chatResponse = chatModelFactory.getModel(request.getModel()).chat(chatRequest);
+
+        // 11. 组装 SourceReference 列表
         List<SourceReference> sources = validChunks.stream()
                 .map(chunk -> new SourceReference(
                         chunk.getDocumentName(),
@@ -121,8 +193,23 @@ public class ChatServiceImpl implements ChatService {
                         chunk.getPage()))
                 .toList();
 
-        // TODO 12. return ChatResponse(answer, sources)
-        return new ChatResponse(answer, sources);
+        String answer = chatResponse.aiMessage().text();
+
+        // 12. 持久化本轮问答
+        conversationMemoryService.saveTurn(conversationId, request.getQuestion(), answer);
+
+        // 12.1 每轮更新结构化状态
+        conversationMemoryService.updateSessionState(conversationId, request.getQuestion(), answer);
+
+        // 13. 消息总数超过窗口 → 滚动摘要
+        if (conversationMemoryService.countMessages(conversationId) > MAX_RECENT_MESSAGES) {
+            // recentMessages 是倒序，末尾 2 条 = 被挤出的最早一轮
+            ConversationMessage q = recentMessages.get(recentMessages.size() - 2);
+            ConversationMessage a = recentMessages.get(recentMessages.size() - 1);
+            conversationMemoryService.updateSummary(conversationId, q.getContent(), a.getContent());
+        }
+
+        return new ChatResponseDto(answer, sources, conversationId);
     }
 
     // ==================== 私有方法（待实现） ====================
@@ -130,13 +217,13 @@ public class ChatServiceImpl implements ChatService {
     /**
      * 校验请求参数。
      * <ul>
-     *   <li>request 不能为 null</li>
-     *   <li>question 不能为空</li>
-     *   <li>topK 必须 > 0</li>
-     *   <li>minScore 必须在 [0, 1] 区间</li>
+     * <li>request 不能为 null</li>
+     * <li>question 不能为空</li>
+     * <li>topK 必须 > 0</li>
+     * <li>minScore 必须在 [0, 1] 区间</li>
      * </ul>
      */
-    private void validateRequest(ChatRequest request) {
+    private void validateRequest(ChatRequestDto request) {
         if (request == null) {
             throw new IllegalArgumentException("请求体不能为空");
         }
@@ -173,6 +260,7 @@ public class ChatServiceImpl implements ChatService {
      * 将检索到的 chunk 拼接成上下文文本。
      * <p>
      * 格式：
+     * 
      * <pre>
      * 【资料1】
      * 文档名称：xxx.pdf
@@ -196,30 +284,6 @@ public class ChatServiceImpl implements ChatService {
             sb.append(chunk.getContent()).append("\n\n");
         }
         return sb.toString();
-    }
-
-    /**
-     * 构造严格 Prompt 模板。
-     * <p>
-     * 规则：
-     * <ol>
-     *   <li>只能根据【知识库资料】回答</li>
-     *   <li>不使用资料之外的知识补充</li>
-     *   <li>资料不足时回答"根据当前知识库资料无法确定"</li>
-     *   <li>不编造文献、页码、数据、结论</li>
-     *   <li>回答中标注依据来源（如"根据资料1和资料2"）</li>
-     *   <li>资料冲突时明确说明</li>
-     *   <li>使用中文，表达清晰简洁</li>
-     * </ol>
-     *
-     * @param question 用户原始问题
-     * @param context  buildContext() 拼接好的上下文
-     * @return 完整的 Prompt 字符串
-     */
-    private String buildPrompt(String question, String context) {
-        return promptTemplate
-                .replace("{context}", context)
-                .replace("{question}", question);
     }
 
     /**

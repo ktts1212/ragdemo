@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -187,7 +186,6 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getProgress(),
                 document.getChunkCount(),
                 document.getErrorMessage(),
-                document.getKnowledgeBaseId()
-        );
+                document.getKnowledgeBaseId());
     }
 }

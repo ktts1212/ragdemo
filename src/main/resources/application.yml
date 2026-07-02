@@ -35,14 +35,26 @@ minio:
   bucket: rag-documents
 
 rag:
-  chat:
-    # DeepSeek OpenAI-compatible API address.
-    base-url: https://api.deepseek.com
-    api-key: sk-c81eb996c1ec44a893921d5c2b6cd7b4
-    model: deepseek-chat
-    temperature: 0.2
+  default-model: deepseek
+  models:
+    deepseek:
+      provider: openai-compatible
+      base-url: https://api.deepseek.com
+      api-key: sk-c81eb996c1ec44a893921d5c2b6cd7b4
+      model-name: deepseek-v4-flash
+      temperature: 0.2
+
+      # zhipu:
+      #   provider: openai-compatible
+      #   base-url: https://open.bigmodel.cn/api/paas/v4
+      #   api-key: ${ZHIPU_API_KEY}
+      #   model-name: glm-4-flash
+      #   temperature: 0.2
+      #   max-output-tokens: 2000
+
   embedding:
     # Ollama OpenAI-compatible API address.
+    provider: openai-compatible
     base-url: http://localhost:11434/v1
     api-key: ollama
     model: bge-m3:latest
@@ -56,3 +68,8 @@ rag:
     min-score: 0.3
   query-rewrite:
     enabled: true
+
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8

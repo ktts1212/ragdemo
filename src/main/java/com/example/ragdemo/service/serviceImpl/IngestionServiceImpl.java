@@ -7,7 +7,6 @@ import com.example.ragdemo.model.entity.KnowledgeDocument;
 import com.example.ragdemo.rag.parser.DocumentParseService;
 import com.example.ragdemo.service.IngestionService;
 import com.example.ragdemo.service.MinioService;
-import com.example.ragdemo.model.entity.IngestionTask;
 import com.example.ragdemo.model.param.DocumentChunkInsertParam;
 import com.example.ragdemo.util.VectorUtils;
 

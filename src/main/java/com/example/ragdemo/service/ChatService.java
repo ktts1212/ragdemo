@@ -1,7 +1,7 @@
 package com.example.ragdemo.service;
 
-import com.example.ragdemo.model.dto.ChatRequest;
-import com.example.ragdemo.model.dto.ChatResponse;
+import com.example.ragdemo.model.dto.ChatRequestDto;
+import com.example.ragdemo.model.dto.ChatResponseDto;
 
 /**
  * RAG 智能问答服务接口（V1）。
@@ -26,5 +26,5 @@ public interface ChatService {
      * @param request 包含 knowledgeBaseId、question、topK、minScore
      * @return 包含 answer 和 sources 的响应
      */
-    ChatResponse chat(ChatRequest request);
+    ChatResponseDto chat(ChatRequestDto request);
 }
