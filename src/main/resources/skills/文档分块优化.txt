@@ -1,0 +1,6 @@
+1. 输入：PDF 解析后的纯文本，或者 markdown 文献文本
+2. 清洗：去页眉、页脚、references
+3. 结构识别：Abstract / Introduction / Methods / Results / Discussion / Conclusion
+4. 分块：section 内按段落递归切分
+5. 元数据：paper_id、title、section、chunk_index、page
+6. 入库：chunk_text + metadata + embedding
