@@ -1,6 +1,602 @@
-1. 输入：PDF 解析后的纯文本，或者 markdown 文献文本
-2. 清洗：去页眉、页脚、references
-3. 结构识别：Abstract / Introduction / Methods / Results / Discussion / Conclusion
-4. 分块：section 内按段落递归切分
-5. 元数据：paper_id、title、section、chunk_index、page
-6. 入库：chunk_text + metadata + embedding
+# Skill: 文献 RAG 文档解析、清洗与分块优化
+
+## 1. Skill 目标
+
+本 Skill 用于指导一个基于 Spring Boot + LangChain4j + PostgreSQL/pgvector 的文献知识库 RAG 项目完成 **PDF 文献解析、文本清洗、结构化分块、向量入库与来源追溯**。
+
+核心目标不是把每篇论文解析成完美 Markdown，而是构建一套现实可落地的 ingestion pipeline：
+
+- 自动解析 PDF 文献；
+- 尽量保留学术论文结构；
+- 删除或隔离明显噪声；
+- 避免 References 污染检索；
+- 生成适合向量检索的 chunk；
+- 每个 chunk 可追溯到论文、section 和 PDF 页码；
+- 支持后续点击 source 后用 PDFBox 按需渲染原始 PDF 页面；
+- 为后续 retrieval harness 和 answer harness 打基础。
+
+---
+
+## 2. 技术选型
+
+### 2.1 主解析器：GROBID
+
+GROBID 用于解析学术论文 PDF，输出 TEI XML。
+
+主要负责：
+
+- title；
+- authors；
+- abstract；
+- body sections；
+- section heading；
+- paragraphs；
+- references；
+- 部分 figure/table caption。
+
+GROBID 的输出不保证完全准确，它是“结构候选”，不是最终干净文本。
+
+### 2.2 Java 后端
+
+Java / Spring Boot 负责：
+
+- 调用 GROBID REST API；
+- 保存原始 PDF；
+- 保存 GROBID TEI XML；
+- 解析 TEI XML；
+- 清洗文本；
+- 生成 paper.json；
+- 执行 section-aware chunking；
+- 调用 embedding model；
+- 写入 PostgreSQL/pgvector；
+- 查询时组织 RAG prompt；
+- 返回 answer 和 sources。
+
+### 2.3 PDF 页面证据：Apache PDFBox
+
+PDFBox 用于根据检索命中的页码，按需把原始 PDF 的指定页面渲染成图片。
+
+注意：
+
+- 不在入库阶段全量生成所有页面图片；
+- 只保存原始 PDF 和 chunk 页码；
+- 用户点击来源页码时再渲染；
+- 渲染后保存到 cache，下次复用。
+
+### 2.4 向量库：PostgreSQL + pgvector
+
+pgvector 用于存储 chunk embedding，并执行向量相似度检索。
+
+### 2.5 兜底解析器：pymupdf4llm
+
+pymupdf4llm 作为 GROBID 失败或解析质量很差时的兜底文本抽取工具。
+
+它稳定、轻量，但结构化能力弱，不作为主流程。
+
+### 2.6 暂缓工具：Marker
+
+Marker 解析质量可能较好，但依赖 PyTorch / CUDA / Surya OCR。本地 Windows + GTX1080 环境不稳定，暂不作为主流程。后续如有 Linux GPU 服务器，可重新评估。
+
+---
+
+## 3. 整体技术路线
+
+### 3.1 入库流程
+
+```text
+上传 PDF
+  ↓
+保存 source.pdf
+  ↓
+调用 GROBID
+  ↓
+保存 grobid.tei.xml
+  ↓
+Java 解析 TEI XML
+  ↓
+生成 paper.json
+  ↓
+PaperCleaner 清洗
+  ↓
+PaperChunker 分块
+  ↓
+Embedding
+  ↓
+写入 PostgreSQL + pgvector
+3.2 查询流程
+用户提问
+  ↓
+问题向量化
+  ↓
+pgvector 检索 topK chunks
+  ↓
+组装上下文
+  ↓
+LLM 生成答案
+  ↓
+返回 answer + sources
+  ↓
+用户点击 source 页码
+  ↓
+PDFBox 从原始 PDF 渲染对应页
+  ↓
+返回页面图片
+4. 存储结构设计
+
+推荐文件存储结构：
+
+storage/
+  papers/
+    {paper_id}/
+      source.pdf
+      grobid.tei.xml
+      paper.json
+      cache/
+        page_001.jpg
+        page_004.jpg
+
+说明：
+
+source.pdf：原始 PDF，必须保存；
+grobid.tei.xml：GROBID 原始输出，方便追溯和调试；
+paper.json：Java 解析后的中间结构化结果；
+cache/：按需渲染后的 PDF 页面图片，不提前全量生成。
+5. 数据表建议
+5.1 paper 表
+paper
+- id
+- title
+- authors
+- year
+- doi
+- source_pdf_path
+- grobid_xml_path
+- paper_json_path
+- parse_status
+- parse_quality
+- created_at
+5.2 document_chunk 表
+document_chunk
+- id
+- paper_id
+- section_title
+- chunk_index
+- content
+- page_start
+- page_end
+- embedding
+- metadata_json
+- created_at
+5.3 metadata_json 示例
+{
+  "paper_title": "A self-supervised electrocardiogram foundation model...",
+  "section_title": "Methods",
+  "page_start": 4,
+  "page_end": 5,
+  "parse_quality": "medium",
+  "source_pdf_path": "storage/papers/ecg_fm/source.pdf"
+}
+6. GROBID 解析策略
+6.1 GROBID 输入输出
+
+输入：
+
+PDF file
+
+输出：
+
+TEI XML
+
+重点解析 TEI XML 中这些结构：
+
+<teiHeader>
+<titleStmt>
+<abstract>
+<text>
+<body>
+<div>
+<head>
+<p>
+<back>
+<listBibl>
+<biblStruct>
+6.2 GROBID 的使用定位
+
+GROBID 的作用是提供结构候选：
+
+GROBID 输出 ≠ 最终入库文本
+GROBID 输出 = 结构化解析候选
+
+GROBID 不完美，可能出现：
+
+abstract 混入正文；
+section 层级不完全准确；
+图表 caption 不完整；
+某些标题识别错误；
+没有明显标题的论文结构识别较差。
+
+这些情况应通过 Java Cleaner 和 Chunker 进行容错处理，而不是要求 GROBID 完美。
+
+7. PaperCleaner 清洗策略
+7.1 清洗目标
+
+清洗的目标不是恢复完美论文结构，而是生成适合 RAG 检索的干净 chunk。
+
+目标：
+
+删除明显噪声；
+保留正文；
+References 不进入普通检索；
+section 信息尽量保留；
+chunk 能追溯到 PDF 页码；
+解析质量差时能标记，而不是静默污染知识库。
+7.2 通用噪声清洗
+
+优先删除或过滤：
+
+copyright
+license
+publisher note
+received / accepted / published
+corresponding author
+email
+单独 DOI 行
+空段落
+过短噪声段
+重复页眉页脚
+References 之后的正文污染
+7.3 References 处理
+
+第一版默认：
+
+References 不进入普通 RAG chunk
+
+原因：
+
+References 中包含大量论文名、作者名、方法名；
+容易污染检索；
+用户问正文内容时容易误召回参考文献。
+
+可以单独保存 references，用于后续引用网络或文献推荐，但默认不参与问答检索。
+
+7.4 Abstract 处理
+
+GROBID 的 abstract 可能不完全准。
+
+第一版策略：
+
+abstract 可以作为普通 section 入库；
+如果 abstract 过长或明显混入正文，不要强行修复；
+标记 abstract_quality = low；
+后续可以用规则重建 Abstract 到 Introduction 之间的文本。
+
+判断 abstract 可疑的规则：
+
+abstract 长度异常大
+abstract 中出现 Introduction / Methods / Results 等标题
+abstract 占全文比例异常高
+8. PaperStructurer 弱结构化策略
+
+不要追求完美结构化，而是做弱结构识别。
+
+常见 section 标题：
+
+Abstract
+Introduction
+Background
+Related Work
+Methods
+Materials and Methods
+Experiments
+Experimental Setup
+Results
+Discussion
+Conclusion
+Limitations
+References
+Acknowledgements
+Funding
+Author Contributions
+
+处理原则：
+
+能识别 section → 使用 section_title
+识别不到 section → section_title = unknown
+小节层级混乱 → 保留原始 head 文本，不强行纠正
+9. PaperChunker 分块策略
+9.1 分块原则
+
+文献不应简单按固定长度硬切，而应尽量保留语义单元。
+
+优先级：
+
+优先级 1：按 section 分块
+优先级 2：section 内按 paragraph 合并
+优先级 3：超过长度后递归切分
+优先级 4：section 识别失败时按 page + paragraph 分块
+优先级 5：再失败时按固定长度兜底切分
+9.2 Chunk 内容格式
+
+入 embedding 前，推荐拼接论文标题和 section：
+
+Paper Title: {paper_title}
+Section: {section_title}
+
+{chunk_text}
+
+这样 embedding 会带上论文和章节语义。
+
+9.3 Chunk metadata
+
+每个 chunk 必须包含：
+
+chunk_id
+paper_id
+paper_title
+section_title
+chunk_index
+content
+page_start
+page_end
+source_pdf_path
+parse_quality
+9.4 Chunk 大小建议
+
+第一版可以使用：
+
+chunk_size: 800~1200 中文字符 / 500~800 English tokens
+chunk_overlap: 100~200 中文字符 / 80~150 tokens
+
+对于英文文献，简单项目可以先按字符近似处理，后续再按 token 优化。
+
+10. 分块兜底策略
+
+由于每篇文献结构不同，必须设计降级流程。
+
+Level 1：GROBID section 结构可靠
+→ section + paragraph chunking
+
+Level 2：section 不稳定，但页码可用
+→ page + paragraph chunking
+
+Level 3：paragraph 也混乱
+→ recursive fixed-length chunking
+
+Level 4：解析质量极差
+→ parse_quality = low，不直接进入主知识库，或等待人工抽检
+
+系统不能因为某篇论文结构不标准就崩溃。
+
+11. PDFBox 按需页面渲染策略
+11.1 为什么按需渲染
+
+不要在入库时把每篇 PDF 的每一页都转成图片。
+
+原因：
+
+1000 篇文献 × 每篇几十 MB 页面图片 = 数十 GB 甚至更多
+
+更合理的方式：
+
+入库时只保存 source.pdf 和 chunk 页码
+查询命中后用户需要查看来源页
+再从原始 PDF 渲染对应页面
+渲染结果保存到 cache
+11.2 按需生成逻辑
+如果 cache/page_004.jpg 存在：
+    直接返回
+
+否则：
+    用 PDFBox 从 source.pdf 渲染第 4 页
+    保存为 cache/page_004.jpg
+    返回
+11.3 接口设计
+GET /api/papers/{paperId}/pages/{pageNum}/image
+
+返回：
+
+image/jpeg
+11.4 PDFBox 职责
+
+PDFBox 只负责页面渲染，不负责文献结构解析。
+
+GROBID：解析论文结构
+PDFBox：根据页码渲染原 PDF 页面
+12. 图片处理策略
+
+第一版不做图片向量检索。
+
+原因：
+
+保存图片不等于可以检索图片；
+普通 RAG 检索的是文本 embedding；
+图片检索需要 CLIP/SigLIP 等多模态 embedding；
+工程复杂度高，不适合 V1。
+
+第一版图片策略：
+
+检索文本 chunk
+  ↓
+chunk metadata 中有 page_start / page_end
+  ↓
+用户点击 source
+  ↓
+PDFBox 渲染对应页
+  ↓
+用户查看原 PDF 页面
+
+图表 caption 如果被 GROBID 提取到，可以作为普通文本进入 chunk 或 metadata。
+
+13. parse_quality 质量检测
+
+每篇论文解析后要给质量等级：
+
+high / medium / low
+
+可以根据以下指标判断：
+
+是否识别 title
+是否识别 abstract
+是否识别 body
+section 数量是否合理
+正文总长度是否合理
+References 是否分离
+空 chunk 比例是否过高
+重复行比例是否过高
+unknown section 占比是否过高
+
+示例：
+
+title 存在 + body 存在 + section 数量 >= 3 → medium/high
+body 缺失或正文长度极短 → low
+unknown section 占比过高 → medium/low
+
+低质量文献可以：
+
+暂不入库；
+标记后入库；
+fallback 到 pymupdf4llm；
+等待人工抽检。
+14. RAG 查询与来源追溯
+14.1 检索返回内容
+
+检索结果必须包含：
+
+content
+paper_title
+section_title
+page_start
+page_end
+chunk_id
+paper_id
+14.2 LLM prompt 中的上下文格式
+
+推荐：
+
+[Source 1]
+Paper: {paper_title}
+Section: {section_title}
+Pages: {page_start}-{page_end}
+Content:
+{chunk_text}
+
+[Source 2]
+...
+14.3 回答 sources
+
+回答时返回：
+
+{
+  "answer": "...",
+  "sources": [
+    {
+      "paper_id": "ecg_fm",
+      "paper_title": "...",
+      "section_title": "Methods",
+      "page_start": 4,
+      "page_end": 5,
+      "chunk_id": "ecg_fm_0012"
+    }
+  ]
+}
+
+用户点击 source 时，再通过 PDFBox 渲染对应页。
+
+15. Retrieval Harness 评估
+
+文档拆分优化后，必须做 retrieval harness，而不是只靠肉眼判断。
+
+15.1 先评估检索，不急着评估最终答案
+
+第一阶段重点看：
+
+问题能不能召回正确 chunk
+正确 chunk 排名第几
+是否召回 References 噪声
+是否召回作者信息/版权信息噪声
+Methods / Results / Discussion 是否能正确召回
+15.2 测试问题类型
+
+设计 20~30 个问题，覆盖：
+
+论文核心贡献
+使用的数据集
+模型结构
+训练策略
+实验指标
+消融实验
+结果对比
+局限性
+结论
+15.3 评估指标
+
+可以记录：
+
+Recall@K
+MRR
+topK 是否包含目标页
+topK 是否包含目标 section
+噪声召回比例
+人工抽检通过率
+16. 开发顺序
+
+推荐开发顺序：
+
+Step 1：Docker 启动 GROBID Server
+Step 2：Spring Boot 调通 GROBID processFulltextDocument
+Step 3：保存 source.pdf 和 grobid.tei.xml
+Step 4：Java 解析 TEI XML 的 title / abstract / body / references
+Step 5：生成 paper.json
+Step 6：实现 PaperCleaner
+Step 7：实现 PaperChunker
+Step 8：embedding 入 pgvector
+Step 9：实现 RAG 检索问答
+Step 10：实现 sources 返回
+Step 11：实现 PDFBox 按需渲染页面接口
+Step 12：实现 retrieval harness
+Step 13：根据 harness 结果迭代 chunking 和 cleaning
+17. 当前 V1 不做的内容
+
+V1 暂不做：
+
+图片 embedding
+多模态 RAG
+自动裁剪单独 Figure
+表格结构精准还原
+公式结构精准解析
+每页提前全量截图
+LLM 全文清洗
+复杂 rerank
+完整 RAGAS answer-level 评估
+
+V1 先保证：
+
+PDF 能自动入库
+正文能结构化提取
+References 不污染
+chunk 有 section 和 page metadata
+pgvector 能检索
+回答能返回 sources
+点击 source 能看到原 PDF 页
+18. 项目表述建议
+
+可以在项目中这样描述：
+
+基于 Spring Boot + LangChain4j + PostgreSQL/pgvector 构建文献知识库 RAG 系统。
+引入 GROBID 对学术论文 PDF 进行 TEI XML 结构化解析，提取标题、摘要、正文层级、参考文献等信息。
+实现 PaperCleaner 与 section-aware PaperChunker，对论文内容进行清洗、分块和 metadata 追踪，避免 References 污染检索。
+结合 Apache PDFBox 实现原始 PDF 页面的按需渲染，支持检索结果定位到论文 section 和页码。
+通过 retrieval harness 评估 chunking 策略对召回效果的影响。
+19. 核心原则
+
+本 Skill 的核心原则：
+
+不追求完美 PDF 解析
+追求稳定、可降级、可追溯、可评估的 RAG ingestion pipeline
+
+最终目标是：
+
+让大多数文献自动入库后能被有效检索；
+解析差的文献能被标记；
+检索结果能追溯到原始 PDF 页码；
+后续通过 harness 持续优化清洗和分块策略。
