@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  模拟 GROBID /api/processFulltextDocument 输出的 TEI XML。
+  结构完全按 GROBID 0.9.x 真实输出组织：
+    - teiHeader/fileDesc/sourceDesc/biblStruct/analytic（当前论文，非 references）
+    - encodingDesc/appInfo/application（ParserInfo）
+    - profileDesc/abstract + textClass/keywords
+    - text/body 平铺 div（含无标题 div、figure type=table、formula、list）
+    - text/back/div[@type='references']/listBibl/biblStruct（References）
+  注意：这是模拟样例，非真实论文输出。用真实 GROBID 跑一篇论文后可替换本文件。
+-->
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="en">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title level="a" type="main">A self-supervised electrocardiogram foundation model</title>
+        <author>
+          <persName><forename type="first">Siying</forename><surname>Lin</surname></persName>
+          <affiliation key="aff0"/>
+        </author>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>Nature Publishing Group</publisher>
+        <date type="published" when="2026-08-26">26 August 2026</date>
+      </publicationStmt>
+      <sourceDesc>
+        <biblStruct>
+          <analytic>
+            <title level="a" type="main">A self-supervised electrocardiogram foundation model</title>
+            <author>
+              <persName><forename type="first">Siying</forename><surname>Lin</surname></persName>
+              <email>siying.lin@example.org</email>
+              <idno type="ORCID">0000-0002-5677-2128</idno>
+              <affiliation key="aff0"/>
+            </author>
+            <author>
+              <persName><forename type="first">Ziyang</forename><surname>Wang</surname></persName>
+              <affiliation key="aff0"/>
+            </author>
+            <author>
+              <persName><forename type="first">Ana</forename><forename type="middle">Maria</forename><surname>Garcia</surname></persName>
+              <affiliation key="aff1"/>
+            </author>
+            <affiliation key="aff0">
+              <orgName type="institution">University of XXX</orgName>
+              <orgName type="department">Department of Computer Science</orgName>
+              <address>
+                <addrLine>Tokyo 113-8656</addrLine>
+                <country>Japan</country>
+              </address>
+            </affiliation>
+            <affiliation key="aff1">
+              <orgName type="institution">Hospital YYY</orgName>
+              <address><country>USA</country></address>
+            </affiliation>
+          </analytic>
+          <monogr>
+            <title level="j">Nature Communications</title>
+            <idno type="DOI">10.1038/s41467-026-72436-2</idno>
+            <imprint>
+              <date type="published" when="2026-08-26">26 August 2026</date>
+            </imprint>
+          </monogr>
+        </biblStruct>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <appInfo>
+        <application version="0.9.0" ident="GROBID" when="2026-08-27T08:00:00Z"/>
+      </appInfo>
+    </encodingDesc>
+    <profileDesc>
+      <abstract>
+        <p>Electrocardiogram (ECG) analysis is crucial for cardiac diagnosis. We present a self-supervised foundation model for ECG.</p>
+        <p>Experiments on six public datasets demonstrate state-of-the-art performance across rhythm and morphology classification.</p>
+      </abstract>
+      <textClass>
+        <keywords>
+          <term>ECG</term>
+          <term>foundation model</term>
+          <term>self-supervised learning</term>
+        </keywords>
+      </textClass>
+    </profileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div>
+        <p>Unlabeled preamble paragraph that must be preserved.</p>
+      </div>
+      <div>
+        <head>Introduction</head>
+        <p>ECG signals are widely used in clinical practice. Previous studies <ref type="bibr" target="#b8">8</ref> and <ref type="bibr" target="#b12">12</ref> showed that contrastive learning works well for physiological signals.</p>
+        <p>HeartBEiT <ref type="bibr" target="#b8">8</ref> leverages masked image modeling on heartbeats.</p>
+      </div>
+      <div>
+        <head>Results</head>
+        <p>Our model achieves state-of-the-art performance on all benchmarks.</p>
+        <figure xml:id="fig_0" coords="4 10,20,100,200; 5 10,20,100,200">
+          <head>Fig. 2 |</head>
+          <label>2</label>
+          <figDesc>Overall architecture of the proposed framework.</figDesc>
+          <graphic url="fig_0.png"/>
+        </figure>
+        <figure type="table" xml:id="tab_0">
+          <head>Table 1 |</head>
+          <label>1</label>
+          <figDesc>Benchmark results on three public datasets.</figDesc>
+          <table>
+            <row><cell>Model</cell><cell>PTB-XL</cell><cell>Chapman</cell></row>
+            <row><cell>ECG-LFM</cell><cell>0.951</cell><cell>0.993</cell></row>
+          </table>
+        </figure>
+        <formula xml:id="formula_0">
+          <label>(1)</label>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <mi>L</mi><mo>=</mo><mo>&#x2212;</mo><mi>log</mi>
+          </math>
+        </formula>
+        <list>
+          <item>Encoder</item>
+          <item>Projection head</item>
+          <item>Classifier</item>
+        </list>
+      </div>
+      <div>
+        <head>Discussion</head>
+        <p>We discuss limitations and future directions.</p>
+      </div>
+      <div>
+        <head>Methods</head>
+        <p>We describe the model architecture and training strategy.</p>
+      </div>
+      <div>
+        <head>Ethics</head>
+        <p>Ethics statement.</p>
+      </div>
+      <div>
+        <head>Data sources</head>
+        <p>We use six public ECG datasets.</p>
+      </div>
+    </body>
+    <back>
+      <div type="references">
+        <listBibl>
+          <biblStruct xml:id="b1">
+            <analytic>
+              <title level="a">Automatic diagnosis of the 12-lead ECG using a deep neural network</title>
+              <author>
+                <persName><forename type="first">A</forename><surname>Ribeiro</surname></persName>
+              </author>
+            </analytic>
+            <monogr>
+              <title level="j">Nature Communications</title>
+              <idno type="DOI">10.1038/s41467-020-15432-4</idno>
+              <imprint>
+                <date type="published" when="2020-05-15">15 May 2020</date>
+                <biblScope unit="volume">11</biblScope>
+                <biblScope unit="issue">1</biblScope>
+                <biblScope unit="page">1-9</biblScope>
+              </imprint>
+            </monogr>
+          </biblStruct>
+          <biblStruct xml:id="b8">
+            <analytic>
+              <title level="a">A simple framework for contrastive learning of visual representations</title>
+              <author>
+                <persName><forename type="first">T</forename><surname>Chen</surname></persName>
+              </author>
+            </analytic>
+            <monogr>
+              <title level="j">ICML</title>
+              <idno type="arXiv">arXiv:2002.05709</idno>
+              <imprint>
+                <date type="published" when="2020">2020</date>
+              </imprint>
+            </monogr>
+          </biblStruct>
+          <biblStruct xml:id="b12">
+            <analytic>
+              <title level="a">Momentum contrast for unsupervised visual representation learning</title>
+              <author>
+                <persName><forename type="first">K</forename><surname>He</surname></persName>
+              </author>
+            </analytic>
+            <monogr>
+              <title level="j">CVPR</title>
+              <ptr target="https://arxiv.org/abs/1911.05722"/>
+            </monogr>
+          </biblStruct>
+        </listBibl>
+      </div>
+    </back>
+  </text>
+</TEI>

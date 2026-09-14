@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 真正嵌套 div 的 section 层级测试样例 -->
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="en">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title level="a" type="main">Nested Sections Paper</title>
+      </titleStmt>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div xml:id="sec-methods">
+        <head>Methods</head>
+        <p>A</p>
+        <div xml:id="sec-dataset">
+          <head>Dataset</head>
+          <p>B</p>
+          <div xml:id="sec-dataset-detail">
+            <head>Preprocessing</head>
+            <p>C</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <head>Conclusion</head>
+        <p>D</p>
+      </div>
+    </body>
+  </text>
+</TEI>

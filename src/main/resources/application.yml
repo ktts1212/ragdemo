@@ -60,6 +60,16 @@ rag:
     model: bge-m3:latest
     # bge-m3 returns 1024-dimensional embeddings. Keep this aligned with sql/init.sql.
     dimension: 1024
+  grobid:
+    base-url: http://localhost:8070
+    # 连接超时（默认 3s）
+    connect-timeout: 3s
+    # 读取超时：复杂论文解析可能很慢（默认 120s）
+    read-timeout: 300s
+    # 瞬时故障最大重试次数（503/超时/连接失败，默认 3）
+    max-retries: 3
+    # 重试间隔（默认 5s）
+    retry-backoff: 5s
   chunk:
     max-chars: 800
     overlap-chars: 120

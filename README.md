@@ -189,3 +189,62 @@ curl -X POST "http://localhost:8080/chat" \
 - rerank：TopK 先多取一些，例如 20 条，再调用 rerank 模型重排，最终取前 5 条进入 prompt。
 - memory：增加 `chat_sessions` 和 `chat_messages` 表，把历史对话按 session 保存；提问时把最近 N 轮对话拼入 prompt。
 - agent tool：把检索、数据库查询、外部 HTTP API 封装为 tool，让模型按任务自动决定调用哪些工具。
+
+
+# 核心业务流程
+#1.文档上传
+[上传 PDF]
+   ↓
+[生成 paperId]
+   ↓
+[paper.status = uploading]
+   ↓
+[保存 source.pdf 到 MinIO]
+   ↓
+[paper.status = uploaded]
+   ↓
+[提交异步任务]
+   ↓
+[Worker 从 MinIO 读取 source.pdf]
+   ↓
+[调用 GROBID]
+   ↓
+[获得 tei.xml]
+   ↓
+[保存 tei.xml 到 MinIO]
+   ↓
+[paper.status = parsed]
+   ↓
+[解析 XML → PaperDocument]
+   ↓
+[保存 paper.json 到 MinIO]
+   ↓
+[paper.status = structured]
+   ↓
+[PaperCleaner 清洗]
+   ↓
+[PaperChunker 分块]
+   ↓
+[paper.status = chunked]
+   ↓
+[批量生成 embedding]
+   ↓
+[chunk + embedding 写入 PostgreSQL/pgvector]
+   ↓
+[paper.status = indexed]
+   ↓
+[用户提问]
+   ↓
+[pgvector 检索 chunk]
+   ↓
+[LLM 生成答案]
+   ↓
+[返回 sources: paper + section + page]
+   ↓
+[用户点击页码]
+   ↓
+[PDFBox 按需渲染 PDF 页面]
+   ↓
+[页面图片存 MinIO cache]
+   ↓
+[返回原文页面图]
