@@ -43,6 +43,17 @@ public class KnowledgeDocument {
     /** 文件校验和（SHA-256 等，可用于去重） */
     private String checksum;
 
+    /**
+     * 入库解析模式（三级决策的<b>结果</b>）：AUTO / ACADEMIC / GENERIC。
+     * <p>
+     * 在上传时即确定并落库，异步 worker 据此选择链路（可审计、可重试）。
+     * 同时作为 ACADEMIC 链路的领域 documentId 依据（见 {@link #checksum}）。
+     */
+    private String parseMode;
+
+    /** 解析版本号（artifact key 的 {@code versions/{version}} 段）；重跑解析时递增 */
+    private Integer version;
+
     /** 文档处理状态（uploaded / parsing / chunking / embedding / indexed / failed） */
     private String status;
 

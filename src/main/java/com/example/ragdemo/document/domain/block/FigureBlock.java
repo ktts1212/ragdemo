@@ -1,5 +1,8 @@
 package com.example.ragdemo.document.domain.block;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.example.ragdemo.document.domain.PageRange;
 
 import lombok.AllArgsConstructor;
@@ -20,6 +23,10 @@ public final class FigureBlock implements DocumentBlock {
 
     private String id;
 
+    /** 来源解析器 block id 列表（Figure 可能由多个 raw block 组成） */
+    @Builder.Default
+    private List<String> sourceBlockIds = new ArrayList<>();
+
     /** 图编号文本，如 "Figure 2" */
     private String label;
 
@@ -30,6 +37,13 @@ public final class FigureBlock implements DocumentBlock {
 
     private PageRange pageRange;
 
-    /** 图片资源路径（当前可为空；后续提取图片后可保存 MinIO object key，不保存本地绝对路径） */
-    private String assetPath;
+    /**
+     * 图片资源 key（MinIO object key 或本地测试 key）。
+     * <p>
+     * 禁止保存 base64。当前可为空；Parser 解析到 images 后经 FigureImageStorage 落盘再填。
+     */
+    private String imageKey;
+
+    /** 图内说明文字（descriptionText，区别于 caption） */
+    private String descriptionText;
 }

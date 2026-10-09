@@ -10,6 +10,7 @@ import io.minio.PutObjectArgs;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 @Service
@@ -38,6 +39,26 @@ public class MinioServiceImpl implements MinioService {
                     objectName,
                     file.getSize(),
                     file.getContentType());
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO upload failed: " + objectName, e);
+        }
+    }
+
+    @Override
+    public MinioUploadResult upload(byte[] content, String objectName, String contentType) {
+        try (InputStream inputStream = new ByteArrayInputStream(content)) {
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(minioProperties.getBucket())
+                    .object(objectName)
+                    .stream(inputStream, content.length, -1)
+                    .contentType(contentType == null ? "application/octet-stream" : contentType)
+                    .build());
+
+            return new MinioUploadResult(
+                    minioProperties.getBucket(),
+                    objectName,
+                    (long) content.length,
+                    contentType);
         } catch (Exception e) {
             throw new RuntimeException("MinIO upload failed: " + objectName, e);
         }

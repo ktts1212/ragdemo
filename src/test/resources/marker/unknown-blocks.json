@@ -1,0 +1,15 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/1/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/1/Text/1", "block_type": "Text", "html": "<p>Text before unknown block.</p>" },
+        { "id": "/page/1/SomeFutureType/2", "block_type": "SomeFutureType", "html": "<p>Content of a future block type.</p>" },
+        { "id": "/page/1/Text/3", "block_type": "Text", "html": "<p>Text after unknown block.</p>" }
+      ]
+    }
+  ]
+}

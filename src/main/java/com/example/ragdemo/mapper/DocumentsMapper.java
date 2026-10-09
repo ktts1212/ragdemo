@@ -39,4 +39,13 @@ public interface DocumentsMapper extends BaseMapper<KnowledgeDocument> {
      */
     @Update("UPDATE documents SET chunk_count = #{chunkCount}, updated_at = NOW() WHERE id = #{id}")
     int updateChunkCount(@Param("id") Long id, @Param("chunkCount") int chunkCount);
+
+    /**
+     * 回填存储路径。
+     * <p>
+     * 上传流程为「先插 documents 行取 id → 再算 artifact key → 再上传 MinIO」，
+     * 因为 ACADEMIC 链路的 key 含 documentId（决策 D2），必须先有 id。
+     */
+    @Update("UPDATE documents SET storage_path = #{storagePath}, updated_at = NOW() WHERE id = #{id}")
+    int updateStoragePath(@Param("id") Long id, @Param("storagePath") String storagePath);
 }

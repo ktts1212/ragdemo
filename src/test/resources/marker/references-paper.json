@@ -1,0 +1,23 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/24/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/24/SectionHeader/1", "block_type": "SectionHeader", "html": "<h1>References</h1>" },
+        {
+          "id": "/page/24/List/2",
+          "block_type": "List",
+          "html": "<ul></ul>",
+          "children": [
+            { "id": "/page/24/ListItem/3", "block_type": "ListItem", "html": "<li>1. Ribeiro AH, et al. Automatic diagnosis of the 12-lead ECG. Nat Commun. 2020;11:1769.</li>" },
+            { "id": "/page/24/ListItem/4", "block_type": "ListItem", "html": "<li>2. Chen T, et al. A simple framework for contrastive learning. ICML. 2020.</li>" },
+            { "id": "/page/24/ListItem/5", "block_type": "ListItem", "html": "<li>3. He K, et al. Momentum contrast for unsupervised visual representation learning. CVPR. 2020.</li>" }
+          ]
+        }
+      ]
+    }
+  ]
+}

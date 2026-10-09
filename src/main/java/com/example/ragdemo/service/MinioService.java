@@ -17,6 +17,15 @@ public interface MinioService {
     MinioUploadResult upload(MultipartFile file, String objectName);
 
     /**
+     * 上传字节内容（用于解析产物：marker-raw.json / canonical.json / chunks.json 等）。
+     *
+     * @param content     内容字节
+     * @param objectName  MinIO 存储路径
+     * @param contentType MIME 类型（null 时按 octet-stream）
+     */
+    MinioUploadResult upload(byte[] content, String objectName, String contentType);
+
+    /**
      * 从 MinIO 下载文件
      *
      * @param objectName MinIO 中的存储路径

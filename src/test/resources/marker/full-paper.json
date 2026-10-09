@@ -1,0 +1,63 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/1/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/1/PageHeader/1", "block_type": "PageHeader", "html": "<p>Nature Communications | Article</p>" },
+        { "id": "/page/1/Text/2", "block_type": "Text", "html": "<p>A Self-Supervised Electrocardiogram Foundation Model</p>" },
+        { "id": "/page/1/Text/3", "block_type": "Text", "html": "<p>https://doi.org/10.1038/s41467-026-72436-2</p>" },
+        { "id": "/page/1/SectionHeader/4", "block_type": "SectionHeader", "html": "<h2>Abstract</h2>" },
+        { "id": "/page/1/Text/5", "block_type": "Text", "html": "<p>We present a foundation model for ECG.</p>" },
+        { "id": "/page/1/SectionHeader/6", "block_type": "SectionHeader", "html": "<h2>Introduction</h2>" },
+        { "id": "/page/1/Text/7", "block_type": "Text", "html": "<p>The patients were admitted to the hospital and monitored for</p>" }
+      ]
+    },
+    {
+      "id": "/page/2/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/2/PageFooter/1", "block_type": "PageFooter", "html": "<p>Page 2 of 29</p>" },
+        { "id": "/page/2/Text/2", "block_type": "Text", "html": "<p>twelve hours before the procedure.</p>" },
+        { "id": "/page/2/SectionHeader/3", "block_type": "SectionHeader", "html": "<h2>Results</h2>" },
+        { "id": "/page/2/Text/4", "block_type": "Text", "html": "<p>Our model achieves state-of-the-art performance.</p>" },
+        {
+          "id": "/page/2/Figure/5",
+          "block_type": "Figure",
+          "html": "",
+          "bbox": [100.0, 200.0, 300.0, 400.0],
+          "images": {
+            "0.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+          }
+        },
+        { "id": "/page/2/Caption/6", "block_type": "Caption", "html": "<p>Figure 1 | Overall architecture of the proposed framework.</p>" }
+      ]
+    },
+    {
+      "id": "/page/24/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/24/SectionHeader/1", "block_type": "SectionHeader", "html": "<h2>References</h2>" },
+        {
+          "id": "/page/24/List/2",
+          "block_type": "List",
+          "html": "<ul></ul>",
+          "children": [
+            { "id": "/page/24/ListItem/3", "block_type": "ListItem", "html": "<li>1. Ribeiro AH, et al. Automatic diagnosis of the 12-lead ECG. Nat Commun. 2020.</li>" },
+            { "id": "/page/24/ListItem/4", "block_type": "ListItem", "html": "<li>2. Chen T, et al. A simple framework for contrastive learning. ICML. 2020.</li>" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "/page/25/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/25/SectionHeader/1", "block_type": "SectionHeader", "html": "<h2>Publisher note</h2>" },
+        { "id": "/page/25/Text/2", "block_type": "Text", "html": "<p>Copyright 2026 Nature Publishing Group. All rights reserved.</p>" }
+      ]
+    }
+  ]
+}

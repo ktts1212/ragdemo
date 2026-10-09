@@ -49,7 +49,10 @@ import lombok.extern.slf4j.Slf4j;
  * 不解析 TEI、不存储、不更新数据库、不产生消息。
  * <p>
  * 线程安全：作为 Spring 单例复用，连接池由 RestClient 管理。
+ *
+ * @deprecated legacy：主链路已切换到 Marker 解析器，本类仅保留作 benchmark。
  */
+@Deprecated(since = "marker-refactor")
 @Slf4j
 @Component
 public class GrobidHttpClient implements GrobidClient {

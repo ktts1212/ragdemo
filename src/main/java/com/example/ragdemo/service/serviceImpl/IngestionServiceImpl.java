@@ -2,8 +2,10 @@ package com.example.ragdemo.service.serviceImpl;
 
 import com.example.ragdemo.mapper.DocumentChunkMapper;
 import com.example.ragdemo.mapper.DocumentsMapper;
-import com.example.ragdemo.mapper.IngestionTaskMapper;
 import com.example.ragdemo.model.entity.KnowledgeDocument;
+import com.example.ragdemo.rag.ingest.AcademicIngestionService;
+import com.example.ragdemo.rag.ingest.IngestionStatusUpdater;
+import com.example.ragdemo.rag.ingest.ParseMode;
 import com.example.ragdemo.rag.parser.DocumentParseService;
 import com.example.ragdemo.service.IngestionService;
 import com.example.ragdemo.service.MinioService;
@@ -28,45 +30,69 @@ public class IngestionServiceImpl implements IngestionService {
 
     private final DocumentsMapper documentsMapper;
     private final DocumentChunkMapper documentChunkMapper;
-    private final IngestionTaskMapper ingestionTaskMapper;
     private final MinioService minioService;
     private final DocumentParseService documentParserService;
     private final EmbeddingModel embeddingModel;
     private final TextSplitterService textSplitterService;
+    private final IngestionStatusUpdater statusUpdater;
+    private final AcademicIngestionService academicIngestionService;
 
     public IngestionServiceImpl(DocumentsMapper documentsMapper,
             DocumentChunkMapper documentChunkMapper,
-            IngestionTaskMapper ingestionTaskMapper,
             MinioService minioService,
             DocumentParseService documentParserService,
             EmbeddingModel embeddingModel,
-            TextSplitterService textSplitterService) {
+            TextSplitterService textSplitterService,
+            IngestionStatusUpdater statusUpdater,
+            AcademicIngestionService academicIngestionService) {
         this.documentsMapper = documentsMapper;
         this.documentChunkMapper = documentChunkMapper;
-        this.ingestionTaskMapper = ingestionTaskMapper;
         this.minioService = minioService;
         this.documentParserService = documentParserService;
         this.embeddingModel = embeddingModel;
         this.textSplitterService = textSplitterService;
+        this.statusUpdater = statusUpdater;
+        this.academicIngestionService = academicIngestionService;
     }
 
     @Override
     public void ingest(Long documentId, Long taskId) {
         /* 解析文档业务步骤 */
         // 1. 更新IngestionTask表任务状态
-        markTaskRunning(taskId);
+        statusUpdater.markTaskRunning(taskId);
         // 2. 获取文档原始信息
         KnowledgeDocument knowledgeDocument = documentsMapper.selectById(documentId);
         if (knowledgeDocument == null) {
-            markTaskFailed(taskId, "文档不存在");
+            statusUpdater.markTaskFailed(taskId, "文档不存在");
             return;
         }
         // 3.检查文档是否已处理过
         if ("indexed".equals(knowledgeDocument.getStatus())) {
-            markTaskSuccess(taskId);
+            statusUpdater.markTaskSuccess(taskId);
             return;
         }
-        // 4.更新文档状态
+
+        // 4. 分流：ACADEMIC → 学术链路；否则 GENERIC（skill §9）
+        ParseMode parseMode = ParseMode.from(knowledgeDocument.getParseMode());
+        log.info("入库分流: documentId={}, parseMode={}", documentId, parseMode);
+        try {
+            if (parseMode == ParseMode.ACADEMIC) {
+                // 学术链路自己管理 parsing/chunking/embedding/indexed 与任务状态
+                academicIngestionService.ingest(knowledgeDocument, taskId);
+            } else {
+                ingestGeneric(knowledgeDocument, taskId);
+            }
+        } catch (Exception e) {
+            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            statusUpdater.updateDocumentStatus(documentId, "failed", 100, message);
+            statusUpdater.markTaskFailed(taskId, message);
+        }
+    }
+
+    /** GENERIC 链路（原有逻辑，行为不变）。 */
+    private void ingestGeneric(KnowledgeDocument knowledgeDocument, Long taskId) {
+        Long documentId = knowledgeDocument.getId();
+        // 5. 更新文档状态
         updateDocumentStatus(documentId, "parsing", 20, null);
 
         // 5. 从 MinIO 下载原始文件
@@ -118,29 +144,26 @@ public class IngestionServiceImpl implements IngestionService {
         }
     }
 
+    // ==================== 状态更新（统一委托给 IngestionStatusUpdater，两条链路共用一份实现） ====================
+
     private void markTaskRunning(Long taskId) {
-        ingestionTaskMapper.markRunning(taskId);
-        log.info("任务开始执行: taskId={}", taskId);
+        statusUpdater.markTaskRunning(taskId);
     }
 
     private void markTaskSuccess(Long taskId) {
-        ingestionTaskMapper.updateStatus(taskId, "success", null, LocalDateTime.now());
-        log.info("任务执行成功: taskId={}", taskId);
+        statusUpdater.markTaskSuccess(taskId);
     }
 
     private void markTaskFailed(Long taskId, String errorMessage) {
-        ingestionTaskMapper.updateStatus(taskId, "failed", errorMessage, LocalDateTime.now());
-        log.error("任务执行失败: taskId={}, error={}", taskId, errorMessage);
+        statusUpdater.markTaskFailed(taskId, errorMessage);
     }
 
     private void updateDocumentStatus(Long documentId, String status, int progress, String errorMessage) {
-        documentsMapper.updateStatus(documentId, status, progress, errorMessage);
-        log.info("文档状态更新: documentId={}, status={}, progress={}", documentId, status, progress);
+        statusUpdater.updateDocumentStatus(documentId, status, progress, errorMessage);
     }
 
     private void updateChunkCount(Long documentId, int count) {
-        documentsMapper.updateChunkCount(documentId, count);
-        log.info("更新 chunk 数量: documentId={}, chunkCount={}", documentId, count);
+        statusUpdater.updateChunkCount(documentId, count);
     }
 
     private void saveChunksAndMarkIndexed(KnowledgeDocument doc, Long taskId,

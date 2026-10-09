@@ -60,7 +60,12 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>无 coords 不伪造页码</li>
  * </ul>
  * 线程安全：无实例字段保存解析状态，可作为 Spring singleton 使用。
+ *
+ * @deprecated legacy：主链路已切换到 Marker 解析器
+ *             （{@code com.example.ragdemo.document.parser.marker.MarkerDocumentParser}）。
+ *             本类保留用于回归对比，不再作为 PDF 学术解析主路线。
  */
+@Deprecated(since = "marker-refactor")
 @Slf4j
 @Component
 public class GrobidDocumentParser {

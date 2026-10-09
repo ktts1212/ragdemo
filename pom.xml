@@ -97,6 +97,13 @@
             <version>8.5.10</version>
         </dependency>
 
+        <!-- HTML 解析：Marker 的 block content 为 HTML，需安全提取纯文本 -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+
         <!-- Spring Kafka -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>

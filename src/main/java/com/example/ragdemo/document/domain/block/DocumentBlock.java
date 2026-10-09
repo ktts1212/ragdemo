@@ -19,10 +19,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = FigureBlock.class, name = "FIGURE"),
         @JsonSubTypes.Type(value = TableBlock.class, name = "TABLE"),
         @JsonSubTypes.Type(value = FormulaBlock.class, name = "FORMULA"),
-        @JsonSubTypes.Type(value = ListBlock.class, name = "LIST")
+        @JsonSubTypes.Type(value = ListBlock.class, name = "LIST"),
+        @JsonSubTypes.Type(value = CaptionBlock.class, name = "CAPTION"),
+        @JsonSubTypes.Type(value = FootnoteBlock.class, name = "FOOTNOTE"),
+        @JsonSubTypes.Type(value = NoiseBlock.class, name = "NOISE")
 })
 public sealed interface DocumentBlock
-        permits ParagraphBlock, FigureBlock, TableBlock, FormulaBlock, ListBlock {
+        permits ParagraphBlock, FigureBlock, TableBlock, FormulaBlock, ListBlock,
+                CaptionBlock, FootnoteBlock, NoiseBlock {
 
     String getId();
 

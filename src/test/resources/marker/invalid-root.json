@@ -1,0 +1,7 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "NotADocument",
+  "children": [
+    { "id": "/page/1/Page/0", "block_type": "Page", "children": [] }
+  ]
+}

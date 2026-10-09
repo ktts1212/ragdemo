@@ -5,7 +5,13 @@ package com.example.ragdemo.infrastructure.grobid;
  * <p>
  * 本层只负责与外部 GROBID Docker 服务的 HTTP 通信，输出 TEI XML 字符串。
  * 不包含 TEI 解析、分块、embedding、存储等逻辑。
+ *
+ * @deprecated legacy：GROBID 已降级为 benchmark parser，不再作为 PDF 学术解析主链路。
+ *             主链路改为 Marker（见 {@code infrastructure/marker/} 与
+ *             {@code document/parser/marker/}）。源码暂时保留用于对比与回归，
+ *             待 Marker pipeline 稳定后再决定删除或保留为 benchmark。
  */
+@Deprecated(since = "marker-refactor")
 public interface GrobidClient {
 
     /**

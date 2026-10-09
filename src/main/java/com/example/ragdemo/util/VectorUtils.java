@@ -1,6 +1,7 @@
 package com.example.ragdemo.util;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public final class VectorUtils {
@@ -31,5 +32,26 @@ public final class VectorUtils {
             return text;
         }
         return text.substring(0, maxLength) + "...";
+    }
+
+    /**
+     * {@code List<String>} → PostgreSQL {@code text[]} 字面量，如 {@code {"4. Methods","4.1 Datasets"}}。
+     * <p>
+     * 元素加双引号并转义 {@code \} 与 {@code "}，null / 空白元素跳过；空列表 → {@code {}}。
+     * SQL 侧配合 {@code CAST(#{sectionPath} AS text[])} 使用。
+     */
+    public static String toPgTextArray(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "{}";
+        }
+        String joined = values.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(VectorUtils::escapePgArrayElement)
+                .collect(Collectors.joining(","));
+        return "{" + joined + "}";
+    }
+
+    private static String escapePgArrayElement(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 }

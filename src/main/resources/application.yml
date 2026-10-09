@@ -60,7 +60,28 @@ rag:
     model: bge-m3:latest
     # bge-m3 returns 1024-dimensional embeddings. Keep this aligned with sql/init.sql.
     dimension: 1024
+    # 批量 embedding 的批大小与可重试错误的重试次数（skill §13）
+    batch-size: 32
+    max-retries: 2
+  parser:
+    # 学术文献 PDF 解析后端：marker（主）/ grobid（legacy, 不再作为主链路）
+    backend: marker
+    # 入库解析模式默认值（第 2 级；上传参数 > 本配置 > 按扩展名/MIME 自动）
+    # AUTO：PDF → 学术链路(Marker)；txt/md 等 → 通用链路
+    parse-mode: auto
+  marker:
+    # Marker API（经 SSH Tunnel 访问远程服务：Windows 127.0.0.1:18001 → Linux marker-api）
+    base-url: http://127.0.0.1:18001
+    connect-timeout: 5s
+    # Marker 解析论文可能数十秒到数分钟（默认 900s）
+    read-timeout: 900s
+  repair:
+    # ReadingOrderRepair 扫描窗口与开关
+    max-skip-blocks: 8
+    transparent-noise-enabled: true
+    figure-association-enabled: true
   grobid:
+    # legacy：GROBID 已降级为 benchmark parser，不再作为主链路
     base-url: http://localhost:8070
     # 连接超时（默认 3s）
     connect-timeout: 3s
@@ -73,6 +94,15 @@ rag:
   chunk:
     max-chars: 800
     overlap-chars: 120
+  # SectionAwareChunker：以 token 为单位的预算（与上方 legacy 的字符口径解耦）
+  chunker:
+    target-tokens: 700
+    max-tokens: 1000
+    min-tokens: 180
+    overlap-tokens: 100
+    # v1 默认关闭 overlap；且仅对同 Section 内的相邻 TEXT chunk 生效
+    overlap-enabled: false
+    header-include-title: true
   retrieval:
     top-k: 5
     min-score: 0.3

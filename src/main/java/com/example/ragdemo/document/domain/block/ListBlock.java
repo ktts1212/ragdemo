@@ -25,6 +25,9 @@ public final class ListBlock implements DocumentBlock {
 
     private String id;
 
+    /** 来源解析器 block id，用于 trace/debug */
+    private String sourceBlockId;
+
     /** 列表项 */
     @Builder.Default
     private List<String> items = new ArrayList<>();

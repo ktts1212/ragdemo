@@ -1,0 +1,24 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/1/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/1/PageHeader/1", "block_type": "PageHeader", "html": "<p>Nature Communications | Article</p>" },
+        { "id": "/page/1/SectionHeader/2", "block_type": "SectionHeader", "html": "<h1>Introduction</h1>" },
+        { "id": "/page/1/Text/3", "block_type": "Text", "html": "<p>ECG signals are widely used in clinical practice.</p>" },
+        { "id": "/page/1/PageFooter/4", "block_type": "PageFooter", "html": "<p>Page 1 of 29</p>" }
+      ]
+    },
+    {
+      "id": "/page/2/Page/0",
+      "block_type": "Page",
+      "children": [
+        { "id": "/page/2/SectionHeader/1", "block_type": "SectionHeader", "html": "<h1>Methods</h1>" },
+        { "id": "/page/2/Text/2", "block_type": "Text", "html": "<p>We describe the model architecture and training strategy.</p>" }
+      ]
+    }
+  ]
+}

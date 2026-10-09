@@ -22,6 +22,9 @@ public final class FormulaBlock implements DocumentBlock {
 
     private String id;
 
+    /** 来源解析器 block id，用于 trace/debug */
+    private String sourceBlockId;
+
     /** 公式编号文本，如 "(1)" */
     private String label;
 

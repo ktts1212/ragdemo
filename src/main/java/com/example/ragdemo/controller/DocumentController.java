@@ -37,10 +37,14 @@ public class DocumentController {
     @PostMapping("/upload")
     public Result<KnowledgeDocumentDto> upload(
             @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "knowledgeBaseId", defaultValue = "1") Long knowledgeBaseId) {
-        log.info("文件的名称:{}", file.getOriginalFilename());
-        log.info("文件的大小:{}", file.getSize());
-        return Result.success(documentService.upload(file, knowledgeBaseId));
+            @RequestParam(value = "knowledgeBaseId", defaultValue = "1") Long knowledgeBaseId,
+            @RequestParam(value = "parseMode", required = false) String parseMode) {
+        log.info("文件的名?{}", file.getOriginalFilename());
+        log.info("文件的大?{}", file.getSize());
+        log.info("parseMode 参数: {}", parseMode);
+        // 三级决策第 1 级：上传参数（null / AUTO 时继续用配置默认与自动判断）
+        return Result.success(documentService.upload(file, knowledgeBaseId,
+                com.example.ragdemo.rag.ingest.ParseMode.from(parseMode)));
     }
 
     @PostMapping("/batch-upload")

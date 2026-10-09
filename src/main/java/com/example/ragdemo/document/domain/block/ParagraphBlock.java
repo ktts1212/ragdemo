@@ -27,6 +27,13 @@ public final class ParagraphBlock implements DocumentBlock {
 
     private String id;
 
+    /** 来源解析器 block id（如 Marker "/page/3/Text/12"），用于 trace/debug/chunk→raw 追踪 */
+    private String sourceBlockId;
+
+    /** 合并后段落对应的全部来源 block id（跨页续接/打断跳过时 > 1） */
+    @Builder.Default
+    private List<String> sourceBlockIds = new ArrayList<>();
+
     private String text;
 
     private Integer order;

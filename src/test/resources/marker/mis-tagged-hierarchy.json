@@ -1,0 +1,38 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/0/Page/0",
+      "block_type": "Page",
+      "children": [
+        {
+          "id": "/page/0/SectionHeader/15",
+          "block_type": "SectionHeader",
+          "html": "<h1>I. INTRODUCTION</h1>",
+          "section_hierarchy": { "1": "/page/0/SectionHeader/15" }
+        },
+        {
+          "id": "/page/2/SectionHeader/6",
+          "block_type": "SectionHeader",
+          "html": "<h2><i>C. Dataset</i></h2>",
+          "section_hierarchy": {
+            "1": "/page/0/SectionHeader/15",
+            "2": "/page/2/SectionHeader/6"
+          }
+        },
+        {
+          "id": "/page/3/SectionHeader/3",
+          "block_type": "SectionHeader",
+          "html": "<h4>III. RESULTS</h4>",
+          "section_hierarchy": {
+            "1": "/page/0/SectionHeader/15",
+            "2": "/page/2/SectionHeader/6",
+            "4": "/page/3/SectionHeader/3"
+          }
+        },
+        { "id": "/page/3/Text/4", "block_type": "Text", "html": "<p>Results text.</p>" }
+      ]
+    }
+  ]
+}

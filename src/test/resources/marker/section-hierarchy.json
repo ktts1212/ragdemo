@@ -1,0 +1,46 @@
+{
+  "id": "/page/0/Document/0",
+  "block_type": "Document",
+  "children": [
+    {
+      "id": "/page/0/Page/0",
+      "block_type": "Page",
+      "children": [
+        {
+          "id": "/page/0/SectionHeader/0",
+          "block_type": "SectionHeader",
+          "html": "<h1>I. INTRODUCTION</h1>",
+          "section_hierarchy": { "1": "/page/0/SectionHeader/0" }
+        },
+        { "id": "/page/0/Text/1", "block_type": "Text", "html": "<p>Intro text.</p>" },
+        {
+          "id": "/page/2/SectionHeader/6",
+          "block_type": "SectionHeader",
+          "html": "<h2>A. Dataset</h2>",
+          "section_hierarchy": {
+            "1": "/page/0/SectionHeader/0",
+            "2": "/page/2/SectionHeader/6"
+          }
+        },
+        { "id": "/page/2/Text/7", "block_type": "Text", "html": "<p>Dataset text.</p>" },
+        {
+          "id": "/page/3/SectionHeader/8",
+          "block_type": "SectionHeader",
+          "html": "<h3>A.1 Preprocessing</h3>",
+          "section_hierarchy": {
+            "1": "/page/0/SectionHeader/0",
+            "2": "/page/2/SectionHeader/6",
+            "3": "/page/3/SectionHeader/8"
+          }
+        },
+        { "id": "/page/3/Text/9", "block_type": "Text", "html": "<p>Preprocessing text.</p>" },
+        {
+          "id": "/page/5/SectionHeader/14",
+          "block_type": "SectionHeader",
+          "html": "<h1>II. CONCLUSIONS</h1>",
+          "section_hierarchy": { "1": "/page/5/SectionHeader/14" }
+        }
+      ]
+    }
+  ]
+}

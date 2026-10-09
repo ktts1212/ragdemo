@@ -9,6 +9,9 @@ import com.example.ragdemo.model.dto.MinioUploadResult;
 import com.example.ragdemo.model.entity.KnowledgeDocument;
 import com.example.ragdemo.model.entity.IngestionTask;
 import com.example.ragdemo.model.vo.DocumentVO;
+import com.example.ragdemo.rag.ingest.ArtifactKeyBuilder;
+import com.example.ragdemo.rag.ingest.ParseMode;
+import com.example.ragdemo.rag.ingest.ParseModeResolver;
 import com.example.ragdemo.service.DocumentService;
 import com.example.ragdemo.service.MinioService;
 
@@ -32,22 +35,31 @@ import java.util.UUID;
 @Service
 public class DocumentServiceImpl implements DocumentService {
 
+    /** 默认解析版本号（重跑解析时递增；artifact key 的 versions/{version} 段） */
+    private static final int DEFAULT_VERSION = 1;
+
     private final DocumentsMapper documentsMapper;
     private final KnowledgeBasesMapper knowledgeBasesMapper;
     private final IngestionTaskMapper ingestionTaskMapper;
     private final MinioService minioService;
     private final KafkaProducerService kafkaProducerService;
+    private final ParseModeResolver parseModeResolver;
+    private final ArtifactKeyBuilder artifactKeyBuilder;
 
     public DocumentServiceImpl(DocumentsMapper documentsMapper,
             KnowledgeBasesMapper knowledgeBasesMapper,
             IngestionTaskMapper ingestionTaskMapper,
             MinioService minioService,
-            KafkaProducerService kafkaProducerService) {
+            KafkaProducerService kafkaProducerService,
+            ParseModeResolver parseModeResolver,
+            ArtifactKeyBuilder artifactKeyBuilder) {
         this.documentsMapper = documentsMapper;
         this.knowledgeBasesMapper = knowledgeBasesMapper;
         this.ingestionTaskMapper = ingestionTaskMapper;
         this.minioService = minioService;
         this.kafkaProducerService = kafkaProducerService;
+        this.parseModeResolver = parseModeResolver;
+        this.artifactKeyBuilder = artifactKeyBuilder;
     }
 
     @Override
@@ -57,27 +69,31 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional
-    public KnowledgeDocumentDto upload(MultipartFile file, Long knowledgeBaseId) {
+    public KnowledgeDocumentDto upload(MultipartFile file, Long knowledgeBaseId, ParseMode requestedMode) {
         validateFile(file);
         checkKnowledgeBaseExists(knowledgeBaseId);
-        KnowledgeDocument document = new KnowledgeDocument();
+
         String originalFilename = file.getOriginalFilename();
         String ext = extractFileExt(originalFilename);
         String storedFileName = generateStoredFileName(ext);
-        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String storagePath = String.format("knowledge-base/%d/%s/%s",
-                knowledgeBaseId, dateStr, storedFileName);
-
+        String contentType = file.getContentType();
         String checkSum = calculateSha256(file);
-        MinioUploadResult minioUploadResult = minioService.upload(file, storagePath);
+
+        // ① 三级决策：上传参数 > 配置默认 > 扩展名/MIME 自动判断（决策 D1）
+        ParseMode parseMode = parseModeResolver.resolve(requestedMode, originalFilename, contentType);
+
+        KnowledgeDocument document = new KnowledgeDocument();
         document.setKnowledgeBaseId(knowledgeBaseId);
         document.setFileName(originalFilename);
         document.setStoredFileName(storedFileName);
-        document.setStoragePath(storagePath);
+        // 先插入以取得 documentId：ACADEMIC 链路的 MinIO key 依赖它（决策 D2），storage_path 上传后回填
+        document.setStoragePath("");
         document.setFileSize(file.getSize());
-        document.setContentType(file.getContentType());
+        document.setContentType(contentType);
         document.setFileExt(ext);
         document.setChecksum(checkSum);
+        document.setParseMode(parseMode.name());
+        document.setVersion(DEFAULT_VERSION);
         document.setStatus("uploaded");
         document.setProgress(0);
         document.setChunkCount(0);
@@ -85,6 +101,14 @@ public class DocumentServiceImpl implements DocumentService {
         document.setUpdatedAt(LocalDateTime.now());
         documentsMapper.insert(document);
 
+        // ② 计算 artifact key 并上传（ACADEMIC 走版本化层级；GENERIC 保持既有路径，零回归）
+        String storagePath = parseMode == ParseMode.ACADEMIC
+                ? artifactKeyBuilder.sourceKey(document.getId(), document.getVersion(), ext)
+                : legacyStoragePath(knowledgeBaseId, storedFileName);
+        minioService.upload(file, storagePath);
+        documentsMapper.updateStoragePath(document.getId(), storagePath);
+
+        // ③ 创建入库任务并投递 Kafka
         IngestionTask task = new IngestionTask();
         task.setDocumentId(document.getId());
         task.setKnowledgeBaseId(knowledgeBaseId);
@@ -97,7 +121,15 @@ public class DocumentServiceImpl implements DocumentService {
         kafkaProducerService.sendDocumentIngestionTask(new DocumentIngestionMessage(
                 document.getId(), knowledgeBaseId, task.getId()));
 
+        log.info("上传完成: documentId={}, parseMode={}, version={}, storagePath={}",
+                document.getId(), parseMode, document.getVersion(), storagePath);
         return toDto(document);
+    }
+
+    /** 通用链路沿用既有命名（knowledge-base/{kbId}/{yyyyMMdd}/{uuid}{ext}）。 */
+    private String legacyStoragePath(Long knowledgeBaseId, String storedFileName) {
+        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return String.format("knowledge-base/%d/%s/%s", knowledgeBaseId, dateStr, storedFileName);
     }
 
     @Override

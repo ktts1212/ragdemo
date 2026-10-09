@@ -39,6 +39,12 @@ CREATE TABLE IF NOT EXISTS documents (
     file_ext VARCHAR(32),
     checksum VARCHAR(128),
 
+    -- 入库解析模式（三级决策结果：上传参数 > 配置默认 > 扩展名/MIME 自动）
+    parse_mode VARCHAR(16) NOT NULL DEFAULT 'AUTO'
+        CHECK (parse_mode IN ('AUTO', 'ACADEMIC', 'GENERIC')),
+    -- 解析版本号（MinIO artifact key 的 versions/{version} 段）
+    version INT NOT NULL DEFAULT 1 CHECK (version >= 1),
+
     status VARCHAR(32) NOT NULL DEFAULT 'uploaded'
         CHECK (status IN ('uploaded', 'parsing', 'chunking', 'embedding', 'indexed', 'failed')),
 
@@ -71,6 +77,17 @@ CREATE TABLE IF NOT EXISTS document_chunks (
 
     embedding VECTOR(1024),
 
+    -- 学术链路 chunk metadata（skill §6 混合方案；与 sql/migration/V2__academic_chunk_columns.sql 保持一致）
+    chunk_key      TEXT,
+    chunk_type     VARCHAR(16),
+    section_id     VARCHAR(255),
+    section_title  TEXT,
+    section_path   TEXT[],
+    section_level  INT,
+    embedding_text TEXT,
+    content_hash   VARCHAR(16),
+    end_page       INT,
+
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
     UNIQUE (document_id, chunk_index)
@@ -80,6 +97,14 @@ CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding
 ON document_chunks
 USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_document_chunks_chunk_key
+ON document_chunks (document_id, chunk_key);
+
+CREATE INDEX IF NOT EXISTS idx_document_chunks_chunk_type ON document_chunks (chunk_type);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_section_id ON document_chunks (section_id);
+CREATE INDEX IF NOT EXISTS idx_document_chunks_section_path
+ON document_chunks USING GIN (section_path);
 
 CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_document_chunks_knowledge_base_id ON document_chunks(knowledge_base_id);
