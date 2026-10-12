@@ -20,9 +20,33 @@
     <properties>
         <java.version>17</java.version>
         <langchain4j.version>0.36.2</langchain4j.version>
+        <langgraph4j.version>1.9.4</langgraph4j.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.bsc.langgraph4j</groupId>
+                <artifactId>langgraph4j-bom</artifactId>
+                <version>${langgraph4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- LangGraph4j 核心：图、状态、节点执行-->
+        <dependency>
+        <groupId>org.bsc.langgraph4j</groupId>
+        <artifactId>langgraph4j-core</artifactId>
+        </dependency>
+        <!-- PostgreSQL Checkpoint 持久化 -->
+        <dependency>
+        <groupId>org.bsc.langgraph4j</groupId>
+        <artifactId>langgraph4j-postgres-saver</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
