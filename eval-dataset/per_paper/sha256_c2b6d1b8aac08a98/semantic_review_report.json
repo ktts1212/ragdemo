@@ -1,0 +1,37 @@
+{
+  "paper_id": "sha256:c2b6d1b8aac08a98",
+  "reviewed": 8,
+  "verdicts": {
+    "SEMANTIC_VERIFIED": 8
+  },
+  "visual_required": [],
+  "leakage_flagged": [],
+  "duplicate_groups": {},
+  "truncation_risk": [],
+  "pages_provided": [
+    4,
+    6,
+    8
+  ],
+  "pages_not_provided": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "elapsed_seconds": 66.4,
+  "usage": {
+    "prompt_tokens": 6431,
+    "completion_tokens": 9757,
+    "total_tokens": 16188
+  },
+  "reviewer": "independent LLM reviewer (separate prompt, raw page text, temperature=0)"
+}

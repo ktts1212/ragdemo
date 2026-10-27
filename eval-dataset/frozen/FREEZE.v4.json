@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "v4",
+  "frozen_at": "2026-10-16T14:09:01+0800",
+  "counts": {
+    "candidates": 120,
+    "core": 110,
+    "semantic_verified": 91,
+    "visual_pending": 19,
+    "review_required": 10
+  },
+  "by_category_core": {
+    "FACT": 17,
+    "METHOD": 30,
+    "NUMERIC": 28,
+    "EVIDENCE_LOCATE": 14,
+    "SYNTHESIS": 15,
+    "UNANSWERABLE": 6
+  },
+  "kb": {
+    "knowledge_base_id": 2,
+    "verified_papers": 15,
+    "ambiguous": 0,
+    "not_found": 0,
+    "questions_with_document_id": 120
+  },
+  "rules": {
+    "gold": "reference answers were never modified (byte-identical to V3)",
+    "core": "SEMANTIC_VERIFIED (91) + VISUAL_PENDING (19); review queue excluded",
+    "mapping": "document_id filled only when kb mapping status == VERIFIED (no guessing)"
+  },
+  "artifacts_sha256": {
+    "candidates.v4.jsonl": "d3067338d88ed68556bc8068ed7e3d2259165a45e66417093362ff2d94217c5a",
+    "core_subset.v4.jsonl": "a0faa06af815822422a3de8cd5794ca7845823481c3552536b975ddce03a3dc6",
+    "review_queue.v4.jsonl": "71721cc1559fcc607558c6a8cb61255ab5b244ba33135053a59417d9091f4667",
+    "visual_todo.v4.jsonl": "8f2c6c6941a2858c7313abd0083845623406218c9eb23d38c3fc7042cc7412a5",
+    "document_manifest.v4.json": "a6a7be0796f9c413cecc0cd7caa0ce736cc2f7368a7accf1a4c989247e31bb67"
+  },
+  "supersedes": "v3 (kept on disk, unmodified)"
+}

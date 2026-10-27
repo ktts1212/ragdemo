@@ -29,7 +29,7 @@ spring:
         spring.json.trusted.packages: com.example.ragdemo.*
 
 minio:
-  endpoint: http://localhost:9000
+  endpoint: http://localhost:19000
   access-key: minioadmin
   secret-key: minioadmin
   bucket: rag-documents
@@ -69,6 +69,22 @@ rag:
     # 入库解析模式默认值（第 2 级；上传参数 > 本配置 > 按扩展名/MIME 自动）
     # AUTO：PDF → 学术链路(Marker)；txt/md 等 → 通用链路
     parse-mode: auto
+  # 图化入库开关（step4 §7）：默认 false ⇒ ACADEMIC 仍走原链路（旧链路行为不变）
+  workflow:
+    ingestion:
+      enabled: false
+      # PostgreSQL checkpoint 持久化（本步骤恒为 true；仅供对照实验关闭）
+      checkpoint-enabled: true
+      # 自动恢复调度器：开启后"Kafka 通知丢失 / pending 卡住"会被自动接管（已实测崩溃后数秒收敛）
+      recovery-enabled: true
+      recovery-interval-ms: 30000
+      recovery-batch-size: 10
+      recovery-max-concurrency: 2
+  # Kafka 可靠性（Step 5）：异常有限重试后进 DLT；配合 listener.ack-mode=record 使用。
+  # 默认关闭：真实 broker 上的 ack/DLT 验收尚未通过（消费者未消费到记录），按"未验收不改生产行为"保持旧语义。
+  kafka:
+    reliability:
+      enabled: false
   marker:
     # Marker API（经 SSH Tunnel 访问远程服务：Windows 127.0.0.1:18001 → Linux marker-api）
     base-url: http://127.0.0.1:18001
@@ -108,6 +124,41 @@ rag:
     min-score: 0.3
   query-rewrite:
     enabled: true
+  # 学术 Agent Tools（Day 2 Step 2）：六个 Tool 的硬上限。
+  # 只能由部署方调整；模型无法通过工具参数提高这里的任何一个值。
+  tools:
+    list-page-size-max: 20
+    list-offset-max: 10000
+    title-filter-max-chars: 200
+    search-top-k-max: 10
+    search-content-max-chars: 12000
+    query-max-chars: 512
+    structure-depth-max: 6
+    structure-text-max-chars: 12000
+    structure-abstract-max-chars: 4000
+    read-pdf-max-pages: 3
+    read-pdf-text-max-chars: 15000
+    pdf-image-max-edge-pixels: 1600
+    pdf-max-bytes: 52428800
+    pdf-max-pages: 500
+    pdf-read-timeout-ms: 20000
+    handle-ttl-seconds: 900
+    evidence-max-items: 5
+    evidence-text-max-chars: 12000
+    page-image-enabled: true
+  # 单 Agent（Day 2 Step 3）：默认关闭；开启后 /api/agent/chat 才执行 LLM 与工具。
+  # 预算与上限由服务端持有，模型无法提高；allowed-knowledge-base-ids 是当前无 RBAC 时的最小授权边界。
+  agent:
+    enabled: false
+    max-tool-calls: 8
+    max-llm-turns: 6
+    max-context-chars: 45000
+    max-tool-result-chars: 16000
+    max-output-chars: 12000
+    max-duplicate-calls: 1
+    run-timeout-ms: 180000
+    allowed-knowledge-base-ids: [1]
+    model-key: deepseek
 
 logging:
   charset:

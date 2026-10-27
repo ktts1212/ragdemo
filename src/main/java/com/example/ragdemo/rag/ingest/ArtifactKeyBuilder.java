@@ -26,7 +26,9 @@ public class ArtifactKeyBuilder {
         /** Canonical JSON（可离线重跑 Chunker） */
         CANONICAL("artifacts/canonical.json"),
         /** Chunk manifest（可选：便于对照分块结果） */
-        CHUNKS("artifacts/chunks.json");
+        CHUNKS("artifacts/chunks.json"),
+        /** Canonical 产物的 provenance sidecar（Step 4：判断旧清洗结果能否安全复用，避免误用） */
+        CANONICAL_META("artifacts/canonical.meta.json");
 
         private final String relativePath;
 
@@ -56,5 +58,17 @@ public class ArtifactKeyBuilder {
     /** 解析产物 key，如 {@code .../artifacts/canonical.json}。 */
     public String artifactKey(long documentId, int version, ArtifactType type) {
         return versionPrefix(documentId, version) + type.relativePath();
+    }
+
+    /**
+     * 批次向量产物 key（Step 4）：
+     * {@code documents/{id}/versions/{v}/artifacts/embeddings/{fingerprint}/batch-{index}.json}。
+     * <p>
+     * 用模型/参数指纹分层：模型、维度或批次大小变化 ⇒ fingerprint 变化 ⇒
+     * 旧批次向量天然落在另一个目录，不会被误复用。
+     */
+    public String embeddingBatchKey(long documentId, int version, String fingerprint, int batchIndex) {
+        return versionPrefix(documentId, version) + "artifacts/embeddings/" + fingerprint
+                + "/batch-" + batchIndex + ".json";
     }
 }

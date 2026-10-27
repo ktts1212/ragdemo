@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "v3",
+  "frozen_at": "2026-10-16T10:24:21+0800",
+  "counts": {
+    "candidates": 120,
+    "core": 110,
+    "review_required": 10,
+    "visual_pending": 19,
+    "tiers": {
+      "SEMANTIC_VERIFIED": 91,
+      "VISUAL_PENDING": 19,
+      "REVIEW_REQUIRED": 10
+    }
+  },
+  "rules": {
+    "core": "verification_status==ORIGINAL_PDF_VERIFIED AND no negative reviewer signal",
+    "conservative": "negative if unsupported | leakage | ambiguous | numeric_ok=false | doi_ok=false | truncation_risk",
+    "visual": "flagged separately; retained in core but marked VISUAL_PENDING",
+    "answers": "reference answers were never modified to fit any RAG/Agent output"
+  },
+  "kb_mapping": {
+    "verified": 0,
+    "ambiguous": 1,
+    "not_found": 14
+  },
+  "artifacts_sha256": {
+    "candidates.v3.jsonl": "964248c0d3411ff26ba9751c0f13f9afa0bac827598c8470ed780224abc9f9c8",
+    "core_subset.v3.jsonl": "2b0e0000979f5b184a8c8b4813bee84575ece47235f80d2733f3d4b8f7b24d1a",
+    "review_queue.v3.jsonl": "1224451c5f648b97d9da297d2480ccaab18e472b38c151d5111f6aac95181af8",
+    "visual_todo.v3.jsonl": "bc87a5a944880f324bab6bf57c0e23de1b6c7edb7a012de9f53ec0ed6b795f3f"
+  },
+  "inputs_sha256": {
+    "semantic_review_all.jsonl": "f5176a9d114fff7d78c32d47c6a317ed4a0756980ca4c4ec9014456761eadd75",
+    "visual_todo.jsonl": "1977a15a8e6503c0e8aff7d68b69e93e9c5ebc625eea9907ccb45e8bc79be33c",
+    "kb_alignment.json": "350aaf3a288c24a42d68c4746fc55b8a961e70e1777eedc63126fd9bf002774c"
+  },
+  "reviewer_instability": {
+    "paper_id": "sha256:9670ffc08b269577",
+    "observed": "one verdict flipped between two reviewer runs (7/1 -> 6/2)",
+    "handling": "flagged per row, not auto-excluded"
+  }
+}

@@ -5,6 +5,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,13 @@ public class MarkerHttpClient implements MarkerClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 生产用构造器。
+     * <p>
+     * 必须显式标注 {@code @Autowired}：本类还有第二个（包私有）测试专用构造器，
+     * 存在多个构造器时 Spring 无法自动选择，会退化为"要求无参构造器"而启动失败。
+     */
+    @Autowired
     public MarkerHttpClient(MarkerProperties properties) {
         this(properties, buildRestClient(properties), new ObjectMapper());
     }

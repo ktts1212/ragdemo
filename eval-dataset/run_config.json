@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "v1",
+  "stage": "5.5-finalize-v2",
+  "generated_at": "2026-10-16T01:22:55+0800",
+  "pdf_dir_relative": "src/test/resources/pdfs",
+  "target_questions_per_paper": 5,
+  "quota_plan": {
+    "FACT": 15,
+    "METHOD": 15,
+    "NUMERIC": 15,
+    "EVIDENCE_LOCATE": 15,
+    "SYNTHESIS": 10,
+    "UNANSWERABLE": 5
+  },
+  "generator_model": null,
+  "checker_model": "deepseek (independent reviewer prompt, temperature=0, raw page text)",
+  "llm_calls": 15,
+  "tokens": {
+    "generation": 267914,
+    "semantic_review": 214845,
+    "total": 482759,
+    "observable": true
+  },
+  "notes": [
+    "Registration/audit only: no LLM called, no input PDF or production data modified.",
+    "document_id / knowledge_base_id remain null until mapped to ingested documents (no guessing)."
+  ],
+  "prompt_versions": {
+    "generator": "generate_candidates.py/SYSTEM_PROMPT v1",
+    "checker": "verify_candidates.py (programmatic v1)"
+  },
+  "questions_per_paper_candidates": 8,
+  "verification": "programmatic_page_text_match (independent of generator); LLM checker pass still TODO",
+  "quality_tiers": {
+    "TEXT_MATCHED": "programmatic checks passed",
+    "SEMANTIC_VERIFIED": "independent reviewer confirmed the original pages support the answer",
+    "VISUAL_PENDING": "needs table/figure/image verification",
+    "REVIEW_REQUIRED": "ambiguity / insufficient evidence / conflict"
+  },
+  "versions": {
+    "v1": "text-verified only",
+    "v2": "v1 + independent semantic review tiers"
+  }
+}

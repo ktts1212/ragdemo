@@ -1,0 +1,171 @@
+{
+  "knowledge_base_id": 2,
+  "documents": [
+    {
+      "paper_id": "sha256:154ac83058733fec",
+      "pdf_sha256": "154ac83058733fecad4bdf07b5fb3145202d4a84e3dbe78336513c5425f83560",
+      "document_id": 2110971582784966658,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 109,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "pdf_sha256": "49b711a100fc7ccc6269503350434a5070c9b618ffa0ff49e60e2628d8956762",
+      "document_id": 2110971590116610049,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 37,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:cc2482a565e4a047",
+      "pdf_sha256": "cc2482a565e4a04732bb00fdaa59fbdbdd731f41a60e79baddb37f8b5f540239",
+      "document_id": 2110971591479758850,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 43,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:53384eda3bd3967c",
+      "pdf_sha256": "53384eda3bd3967c060c1c6c20280f2f2a3183036bf918b80f7e65b842838532",
+      "document_id": 2110971593761460226,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 118,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:0cad648d841293e5",
+      "pdf_sha256": "0cad648d841293e5fd31e77902ce15f03aa857b5b758c404a06d07aa928a3db1",
+      "document_id": 2110971595179134978,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 74,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:ab330f69506f2404",
+      "pdf_sha256": "ab330f69506f24048a6d8ef02b42cab632df9212aca61a3ab48ff48b1ee0bd91",
+      "document_id": 2110971596676501506,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 43,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "pdf_sha256": "66d299a9b0d526ebb800de921c4f83c0f157ec318fb9b321315f8eecad166500",
+      "document_id": 2110971598425526273,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 146,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:63fa641631be5c0d",
+      "pdf_sha256": "63fa641631be5c0d30f9e47945a4bef746ae600da0f8e3d2d1adc3d1563c7e81",
+      "document_id": 2110971600120025089,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 34,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:42250d9bd47e888a",
+      "pdf_sha256": "42250d9bd47e888a8c41ddeab9f8db22ffa8a1f92e26e22f39cfa763709eb41d",
+      "document_id": 2110971601546088450,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 133,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:1fe855927b96f87f",
+      "pdf_sha256": "1fe855927b96f87f794804e8a5a98d6ecd7c7ebeeb406d113918d6f2e8c6ce8b",
+      "document_id": 2110971603815206913,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 138,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:955277e90cb402a0",
+      "pdf_sha256": "955277e90cb402a03c4891c88f2e2f16d050beaff111e66b03e8583ad3eadf24",
+      "document_id": 2110971606860271618,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 144,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:16a683d77366810b",
+      "pdf_sha256": "16a683d77366810b5b4bc66e1e8c3714c02b42cb25fcdb81cbdefd3a49402ae0",
+      "document_id": 2110971608550576130,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 57,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "pdf_sha256": "c2b6d1b8aac08a9827aa8fcd2b0bf5b0f79d9339af8abfc9497f65974ac97862",
+      "document_id": 2110971887585038337,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 105,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "pdf_sha256": "0022d6a3ad28f994e1702f6634964739140e86c1a69ed989f5b29632b9fcc68a",
+      "document_id": 2110971612459667458,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 133,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    },
+    {
+      "paper_id": "sha256:9670ffc08b269577",
+      "pdf_sha256": "9670ffc08b2695770d8ed147ffdb92c458b474cd3e248849565bf81db100eff1",
+      "document_id": 2110971615831887873,
+      "knowledge_base_id": 2,
+      "version": 1,
+      "status": "indexed",
+      "chunks": 126,
+      "match_method": "sha256==checksum",
+      "mapping_status": "VERIFIED"
+    }
+  ],
+  "sha256_of_this_manifest": "39edff7d41db0cf99e2416a9f235a7ccf1f87f5498406e55c5bb6082adbe2d1f"
+}

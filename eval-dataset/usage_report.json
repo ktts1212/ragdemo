@@ -1,0 +1,88 @@
+{
+  "observable": true,
+  "generator_model": null,
+  "generator_calls": 15,
+  "prompt_tokens": 112149,
+  "completion_tokens": 155765,
+  "total_tokens": 267914,
+  "checker_calls": 0,
+  "checker_tokens": 0,
+  "checker_note": "verification was programmatic (page-text matching), so 0 LLM tokens",
+  "per_paper": [
+    {
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "total_tokens": 14267,
+      "elapsed_seconds": 34.8
+    },
+    {
+      "paper_id": "sha256:0cad648d841293e5",
+      "total_tokens": 14914,
+      "elapsed_seconds": 42.6
+    },
+    {
+      "paper_id": "sha256:154ac83058733fec",
+      "total_tokens": 22922,
+      "elapsed_seconds": 67.9
+    },
+    {
+      "paper_id": "sha256:16a683d77366810b",
+      "total_tokens": 11840,
+      "elapsed_seconds": 31.3
+    },
+    {
+      "paper_id": "sha256:1fe855927b96f87f",
+      "total_tokens": 16428,
+      "elapsed_seconds": 45.0
+    },
+    {
+      "paper_id": "sha256:42250d9bd47e888a",
+      "total_tokens": 14131,
+      "elapsed_seconds": 35.9
+    },
+    {
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "total_tokens": 13812,
+      "elapsed_seconds": 41.6
+    },
+    {
+      "paper_id": "sha256:53384eda3bd3967c",
+      "total_tokens": 14391,
+      "elapsed_seconds": 38.4
+    },
+    {
+      "paper_id": "sha256:63fa641631be5c0d",
+      "total_tokens": 16070,
+      "elapsed_seconds": 40.3
+    },
+    {
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "total_tokens": 21128,
+      "elapsed_seconds": 61.4
+    },
+    {
+      "paper_id": "sha256:955277e90cb402a0",
+      "total_tokens": 17209,
+      "elapsed_seconds": 42.6
+    },
+    {
+      "paper_id": "sha256:9670ffc08b269577",
+      "total_tokens": 26162,
+      "elapsed_seconds": 76.7
+    },
+    {
+      "paper_id": "sha256:ab330f69506f2404",
+      "total_tokens": 16381,
+      "elapsed_seconds": 39.1
+    },
+    {
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "total_tokens": 29837,
+      "elapsed_seconds": 82.0
+    },
+    {
+      "paper_id": "sha256:cc2482a565e4a047",
+      "total_tokens": 18422,
+      "elapsed_seconds": 65.0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "stage": "kb-setup",
+  "action": "CREATED_NEW_EVAL_KB",
+  "knowledge_base_id": 2,
+  "name": "eval-literature-rag-agent",
+  "audit_log": "identity=false serialSeq=public.knowledge_bases_id_seq existing_kbs=1 ",
+  "columns": [{"column": "id", "type": "bigint", "nullable": "NO", "default": "nextval('knowledge_bases_id_seq'::regclass)"}, {"column": "name", "type": "character varying", "nullable": "NO", "default": null}, {"column": "description", "type": "text", "nullable": "YES", "default": null}, {"column": "created_at", "type": "timestamp without time zone", "nullable": "NO", "default": "now()"}, {"column": "updated_at", "type": "timestamp without time zone", "nullable": "NO", "default": "now()"}],
+  "existing_knowledge_bases_before": [{"id": 1, "name": "默认知识库", "description": "初始默认知识库", "created_at": "2026-10-09 08:07:03.851017"}],
+  "constraints": ["additive only: never updates or deletes existing KB rows", "documents are imported via the existing upload/ingestion path only"],
+  "generated_at": "2026-10-16T11:27:36.915980900+08:00"
+}

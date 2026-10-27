@@ -2,12 +2,13 @@ package com.example.ragdemo.service.serviceImpl;
 
 import com.example.ragdemo.config.ChatModelFactory;
 import com.example.ragdemo.config.RagProperties;
-import com.example.ragdemo.mapper.DocumentChunkMapper;
 import com.example.ragdemo.memory.ConversationMemoryService;
 import com.example.ragdemo.model.dto.ChatRequestDto;
 import com.example.ragdemo.model.dto.ChatResponseDto;
-import com.example.ragdemo.model.dto.RetrievedChunkDto;
 import com.example.ragdemo.model.dto.SourceReference;
+import com.example.ragdemo.retrieval.DocumentRetrievalService;
+import com.example.ragdemo.retrieval.model.RetrievalRequest;
+import com.example.ragdemo.retrieval.model.RetrievedChunk;
 import com.example.ragdemo.service.ChatService;
 import com.example.ragdemo.model.entity.ConversationMessage;
 
@@ -18,7 +19,6 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -40,10 +40,10 @@ import java.util.List;
  * <p>
  * 依赖：
  * <ul>
- * <li>{@link EmbeddingModel} — 问题向量化（替代手写 OpenAiClient.embed）</li>
+ * <li>{@link com.example.ragdemo.retrieval.DocumentRetrievalService} — 问题向量化 + pgvector 检索
+ * （Day 2 Step 1 起从本类内联代码提取为可复用服务，后续 Agent Tools 复用同一实现）</li>
  * <li>{@link dev.langchain4j.model.chat.ChatLanguageModel} — 通过
  * ChatModelFactory 动态选择</li>
- * <li>{@link DocumentChunkMapper} — pgvector 相似度检索</li>
  * </ul>
  */
 @Slf4j
@@ -54,12 +54,34 @@ public class ChatServiceImpl implements ChatService {
     private static final Long DEFAULT_KNOWLEDGE_BASE_ID = 1L;
     private static final int MAX_RECENT_MESSAGES = 16; // 8 轮对话 × 2
 
+    /**
+     * 与 application.yml 的 {@code rag.query-rewrite.enabled} 对应。
+     * <p>Phase 0 审计发现该开关此前**未被任何代码读取**（死配置，Rewrite 无条件执行）⇒ 本处修复。
+     * 关闭时检索直接使用原始问题（回答链路仍使用原始问题，不受影响）。
+     */
+    @org.springframework.beans.factory.annotation.Value("${rag.query-rewrite.enabled:true}")
+    private boolean queryRewriteEnabled;
+
     // ==================== 依赖注入 ====================
-    private final EmbeddingModel embeddingModel;
     private final ChatModelFactory chatModelFactory;
-    private final DocumentChunkMapper documentChunkMapper;
     private final ConversationMemoryService conversationMemoryService;
     private final RagProperties ragProperties;
+    /** Day 2 Step 1：检索能力已解耦为可复用服务（后续 Agent Tools 复用同一实现） */
+    private final DocumentRetrievalService documentRetrievalService;
+
+    /**
+     * Phase 2A：消息保存与 L3 Outbox 入队的**原子提交**入口（跨 Bean 调用 ⇒ @Transactional 通过代理生效）。
+     * <p>用字段注入以保持既有构造器签名不变（旧调用方与单测零改动）；仅在测试中通过反射注入 mock。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.ragdemo.memory.l3.L3TurnCommitService l3TurnCommitService;
+
+    /**
+     * Phase 3：L3 长期记忆（跨会话）。字段注入保持既有构造器签名不变；未启用时返回空快照，
+     * 行为与 Phase 1/2 完全一致。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.example.ragdemo.memory.l3.MemoryL3ContextService l3ContextService;
 
     /** System prompt 模板 */
     private String systemPromptTemplate;
@@ -73,16 +95,14 @@ public class ChatServiceImpl implements ChatService {
     @Value("classpath:prompt/user-prompt.txt")
     private Resource userPromptResource;
 
-    public ChatServiceImpl(EmbeddingModel embeddingModel,
-            ChatModelFactory chatModelFactory,
-            DocumentChunkMapper documentChunkMapper,
+    public ChatServiceImpl(ChatModelFactory chatModelFactory,
             ConversationMemoryService conversationMemoryService,
-            RagProperties ragProperties) {
-        this.embeddingModel = embeddingModel;
+            RagProperties ragProperties,
+            DocumentRetrievalService documentRetrievalService) {
         this.chatModelFactory = chatModelFactory;
-        this.documentChunkMapper = documentChunkMapper;
         this.conversationMemoryService = conversationMemoryService;
         this.ragProperties = ragProperties;
+        this.documentRetrievalService = documentRetrievalService;
     }
 
     @PostConstruct
@@ -120,24 +140,16 @@ public class ChatServiceImpl implements ChatService {
         String sessionState = conversationMemoryService.getSessionState(conversationId);
 
         // 2.5 Query Rewrite：指代消解后的问题用于向量检索
-        String questionForSearch = conversationMemoryService.rewriteQuestion(
-                summary, sessionState, recentMessages, request.getQuestion());
+        String questionForSearch = queryRewriteEnabled
+                ? conversationMemoryService.rewriteQuestion(summary, sessionState, recentMessages,
+                        request.getQuestion())
+                : request.getQuestion();
         log.info("改写后的问题为:{}", questionForSearch);
-        // 3. embeddingModel.embed(question) — 问题向量化（用改写后的问题）
-        float[] questionVector = embeddingModel.embed(questionForSearch)
-                .content().vector();
-
-        // 4. toPgVectorString(vector) — float[] → "[0.12, -0.34, ...]"
-        String questionEmbedding = toPgVectorString(questionVector);
-
-        // 5. documentChunkMapper.searchSimilarChunks() — pgvector 检索 topK
-        List<RetrievedChunkDto> retrievedChunks = documentChunkMapper
-                .searchSimilarChunks(knowledgeBaseId, questionEmbedding, topK);
-
-        // 6. filter(score >= minScore) — 过滤低相似度 chunk
-        List<RetrievedChunkDto> validChunks = retrievedChunks.stream()
-                .filter(chunk -> chunk.getScore() != null && chunk.getScore() >= minScore)
-                .toList();
+        // 3~6. 检索 —— Day 2 Step 1 起复用 DocumentRetrievalService
+        //      等价性：向量化仍是同一个 EmbeddingModel（经共享网关）；pgvector SQL、minScore 过滤、
+        //      距离升序排序均未改变。query rewrite 仍在【本方法内】完成，Retriever 只接收已确定的查询。
+        List<RetrievedChunk> validChunks = documentRetrievalService.retrieve(
+                new RetrievalRequest(questionForSearch, knowledgeBaseId, topK, minScore));
 
         // 7. isEmpty? → return "无法确定" — 无有效资料时拒绝编造
         if (validChunks.isEmpty()) {
@@ -163,13 +175,19 @@ public class ChatServiceImpl implements ChatService {
         }
 
         // 构造当前轮 UserMessage：模板替换占位符
+        // Phase 3：L3 在 summary / sessionState 之后注入（历史背景，不替代论文来源引用）
+        String stateBlock = sessionState != null && !sessionState.isBlank()
+                ? "【结构化状态】\n" + sessionState + "\n\n"
+                : "";
+        String l3Block = loadL3Block(request.getQuestion());
+        if (!l3Block.isBlank()) {
+            stateBlock = stateBlock + l3Block + "\n";
+        }
         String userMessage = userPromptTemplate
                 .replace("{summary}", summary != null && !summary.isBlank()
                         ? "【会话摘要】\n" + summary + "\n\n"
                         : "")
-                .replace("{sessionState}", sessionState != null && !sessionState.isBlank()
-                        ? "【结构化状态】\n" + sessionState + "\n\n"
-                        : "")
+                .replace("{sessionState}", stateBlock)
                 .replace("{context}", context)
                 .replace("{question}", request.getQuestion());
         log.info("构造的非历史记录用户消息是:{}", userMessage);
@@ -185,34 +203,71 @@ public class ChatServiceImpl implements ChatService {
         // 11. 组装 SourceReference 列表
         List<SourceReference> sources = validChunks.stream()
                 .map(chunk -> new SourceReference(
-                        chunk.getDocumentName(),
-                        chunk.getChunkIndex(),
-                        chunk.getScore(),
-                        truncatePreview(chunk.getContent(), 160),
-                        chunk.getContent(),
-                        chunk.getPage()))
+                        chunk.documentName(),
+                        chunk.chunkIndex(),
+                        chunk.score(),
+                        truncatePreview(chunk.content(), 160),
+                        chunk.content(),
+                        chunk.page()))
                 .toList();
 
         String answer = chatResponse.aiMessage().text();
 
-        // 12. 持久化本轮问答
-        conversationMemoryService.saveTurn(conversationId, request.getQuestion(), answer);
+        ChatResponseDto response = new ChatResponseDto(answer, sources, conversationId);
 
-        // 12.1 每轮更新结构化状态
-        conversationMemoryService.updateSessionState(conversationId, request.getQuestion(), answer);
-
-        // 13. 消息总数超过窗口 → 滚动摘要
-        if (conversationMemoryService.countMessages(conversationId) > MAX_RECENT_MESSAGES) {
-            // recentMessages 是倒序，末尾 2 条 = 被挤出的最早一轮
-            ConversationMessage q = recentMessages.get(recentMessages.size() - 2);
-            ConversationMessage a = recentMessages.get(recentMessages.size() - 1);
-            conversationMemoryService.updateSummary(conversationId, q.getContent(), a.getContent());
+        // 12. 核心轮次持久化：失败仍返回答案，但在响应中**明确标记**，绝不宣称已落库
+        try {
+            // Phase 2A：原子提交入口（内部 saveTurn + L3 Outbox 同事务）—— 不要再单独调用 saveTurn，避免双写
+            l3TurnCommitService.commitTurnAndEnqueue(conversationId, request.getQuestion(), answer, null);
+        } catch (RuntimeException e) {
+            log.error("[memory] 会话轮次持久化失败（回答已返回，记忆未落库）: conversationId={}, type={}",
+                    conversationId, e.getClass().getSimpleName());
+            response.setMemoryDegraded(true);
+            response.setMemoryWarning("CONVERSATION_PERSIST_FAILED");
+            // 核心轮次没落库 ⇒ 不再做派生更新，避免产生"半套记忆"
+            return response;
         }
 
-        return new ChatResponseDto(answer, sources, conversationId);
+        // 12.1/13. 派生记忆（结构化状态 + 超窗滚动摘要）：失败只降级，不影响已持久化的核心轮次
+        try {
+            conversationMemoryService.updateSessionState(conversationId, request.getQuestion(), answer);
+
+            if (conversationMemoryService.countMessages(conversationId) > MAX_RECENT_MESSAGES) {
+                // recentMessages 是倒序末尾 2 条 = 窗口内最早的一轮
+                ConversationMessage q = recentMessages.get(recentMessages.size() - 2);
+                ConversationMessage a = recentMessages.get(recentMessages.size() - 1);
+                conversationMemoryService.updateSummary(conversationId, q.getContent(), a.getContent());
+            }
+        } catch (RuntimeException e) {
+            log.error("[memory] 派生记忆更新失败（核心轮次已持久化）: conversationId={}, type={}", conversationId,
+                    e.getClass().getSimpleName());
+            response.setMemoryDegraded(true);
+            response.setMemoryWarning("MEMORY_DERIVED_UPDATE_FAILED");
+        }
+        return response;
     }
 
     // ==================== 私有方法（待实现） ====================
+
+    /**
+     * Phase 3：读取 L3 块。任何失败都降级为""（回答继续使用 L1+L2），
+     * 且**不**改变既有响应的必填字段（向后兼容）。
+     */
+    private String loadL3Block(String question) {
+        if (l3ContextService == null) {
+            return "";
+        }
+        try {
+            var snapshot = l3ContextService.load(question, false, null);
+            if (snapshot.degraded()) {
+                log.warn("[memory] L3 检索失败，已降级为 L1+L2: reason={}", snapshot.reason());
+            }
+            return snapshot.hasContent() ? snapshot.context() : "";
+        } catch (RuntimeException e) {
+            log.warn("[memory] L3 检索异常，已降级为 L1+L2: {}", e.toString());
+            return "";
+        }
+    }
 
     /**
      * 校验请求参数。
@@ -240,23 +295,6 @@ public class ChatServiceImpl implements ChatService {
     }
 
     /**
-     * 将 float[] 向量转为 pgvector 可识别的字符串格式。
-     * <p>
-     * 示例：float[]{0.12, -0.34} → "[0.12, -0.34]"
-     */
-    private String toPgVectorString(float[] vector) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < vector.length; i++) {
-            if (i > 0) {
-                sb.append(",");
-            }
-            sb.append(vector[i]);
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    /**
      * 将检索到的 chunk 拼接成上下文文本。
      * <p>
      * 格式：
@@ -270,18 +308,18 @@ public class ChatServiceImpl implements ChatService {
      * ...chunk 原文...
      * </pre>
      */
-    private String buildContext(List<RetrievedChunkDto> chunks) {
+    private String buildContext(List<RetrievedChunk> chunks) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < chunks.size(); i++) {
-            RetrievedChunkDto chunk = chunks.get(i);
+            RetrievedChunk chunk = chunks.get(i);
             sb.append("【资料").append(i + 1).append("】\n");
-            sb.append("文档名称：").append(chunk.getDocumentName()).append("\n");
-            if (chunk.getPage() != null) {
-                sb.append("页码：").append(chunk.getPage()).append("\n");
+            sb.append("文档名称：").append(chunk.documentName()).append("\n");
+            if (chunk.page() != null) {
+                sb.append("页码：").append(chunk.page()).append("\n");
             }
-            sb.append("相似度分数：").append(chunk.getScore()).append("\n");
+            sb.append("相似度分数：").append(chunk.score()).append("\n");
             sb.append("内容：\n");
-            sb.append(chunk.getContent()).append("\n\n");
+            sb.append(chunk.content()).append("\n\n");
         }
         return sb.toString();
     }

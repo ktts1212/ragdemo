@@ -1,0 +1,229 @@
+[
+  {
+    "paper_id": "sha256:0022d6a3ad28f994",
+    "file_name": "Temporal and spatial self supervised learning methods for electrocardiograms.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 19,
+    "total_tokens": 14267,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:0cad648d841293e5",
+    "file_name": "ECG-FM an open electrocardiogram foundation model.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 9,
+    "total_tokens": 14914,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:154ac83058733fec",
+    "file_name": "A self-supervised electrocardiogram foundation model for empowering cardiovascular disease prediction and genetic factor discovery.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 16,
+    "total_tokens": 22922,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:16a683d77366810b",
+    "file_name": "Learning_ECG_Representations_via_Poly-Window_Contrastive_Learning.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 7,
+    "total_tokens": 11840,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:1fe855927b96f87f",
+    "file_name": "JAMC A jigsaw-based autoencoder with masked contrastive learning for cardiovascular disease diagnosis.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 13,
+    "total_tokens": 16428,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:42250d9bd47e888a",
+    "file_name": "Hierarchical Self-Supervised Representation Learning Framework for Multivariate Time Series Grounded in ECG Analysis.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 29,
+    "total_tokens": 14131,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:49b711a100fc7ccc",
+    "file_name": "A Survey of Augmentation Techniques for Enhancing ECG Representation Through Self-Supervised Contrastive Learning.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 9,
+    "total_tokens": 13812,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:53384eda3bd3967c",
+    "file_name": "CoRe-ECG Advancing Self-Supervised Representation Learning for 12-Lead ECG via Contrastive and Reconstructive Synergy.pdf",
+    "candidates": 8,
+    "verified": 6,
+    "review_required": 2,
+    "rejected": 0,
+    "pages_verified": 33,
+    "total_tokens": 14391,
+    "reason_counts": {
+      "numbers not found on cited pages: 3.2": 2
+    },
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:63fa641631be5c0d",
+    "file_name": "Genome-wide association and Mendelian randomization analysis provide insights into the shared genetic architecture between high-dimensional electrocardiographic features and ischemic heart disease.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 10,
+    "total_tokens": 16070,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:66d299a9b0d526eb",
+    "file_name": "Empowering genetic discoveries and cardiovascular risk assessment by predicting electrocardiograms from genotype.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 15,
+    "total_tokens": 21128,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:955277e90cb402a0",
+    "file_name": "LEARNING GENERAL REPRESENTATION OF 12-LEAD ECG WITH A JOINT-EMBEDDING PREDICTIVE ARCHITECTURE.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 24,
+    "total_tokens": 17209,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:9670ffc08b269577",
+    "file_name": "Toward robust automated cardiovascular arrhythmia detection using self-supervised learning and 1-dimensional vision transformers.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 17,
+    "total_tokens": 26162,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:ab330f69506f2404",
+    "file_name": "Efficient pretraining of ECG scalogram images using masked autoencoders for cardiovascular disease diagnosis.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 11,
+    "total_tokens": 16381,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:c2b6d1b8aac08a98",
+    "file_name": "Prediction of incident atrial fibrillation using deep learning, clinical models, and polygenic scores.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 15,
+    "total_tokens": 29837,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  },
+  {
+    "paper_id": "sha256:cc2482a565e4a047",
+    "file_name": "CG-DMER_Hybrid_Contrastive-Generative_Framework_for_Disentangled_Multimodal_ECG_Representation_Learning.pdf",
+    "candidates": 8,
+    "verified": 8,
+    "review_required": 0,
+    "rejected": 0,
+    "pages_verified": 5,
+    "total_tokens": 18422,
+    "reason_counts": {},
+    "limitations": [
+      "text-level verification only: visual (image) table/figure checks are NOT performed",
+      "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+    ]
+  }
+]

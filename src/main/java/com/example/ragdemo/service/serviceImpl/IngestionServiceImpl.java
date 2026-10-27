@@ -1,5 +1,6 @@
 package com.example.ragdemo.service.serviceImpl;
 
+import com.example.ragdemo.config.RagProperties;
 import com.example.ragdemo.mapper.DocumentChunkMapper;
 import com.example.ragdemo.mapper.DocumentsMapper;
 import com.example.ragdemo.model.entity.KnowledgeDocument;
@@ -11,6 +12,8 @@ import com.example.ragdemo.service.IngestionService;
 import com.example.ragdemo.service.MinioService;
 import com.example.ragdemo.model.param.DocumentChunkInsertParam;
 import com.example.ragdemo.util.VectorUtils;
+import com.example.ragdemo.workflow.runtime.WorkflowExecutionCoordinator;
+import com.example.ragdemo.workflow.runtime.WorkflowReconciliationService;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.embedding.Embedding;
@@ -18,6 +21,7 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -36,6 +40,10 @@ public class IngestionServiceImpl implements IngestionService {
     private final TextSplitterService textSplitterService;
     private final IngestionStatusUpdater statusUpdater;
     private final AcademicIngestionService academicIngestionService;
+    private final RagProperties ragProperties;
+    /** 图组件仅当 {@code rag.workflow.ingestion.enabled=true} 时存在 ⇒ 用 Provider 避免强制依赖 */
+    private final ObjectProvider<WorkflowExecutionCoordinator> ingestionCoordinatorProvider;
+    private final ObjectProvider<WorkflowReconciliationService> ingestionReconciliationProvider;
 
     public IngestionServiceImpl(DocumentsMapper documentsMapper,
             DocumentChunkMapper documentChunkMapper,
@@ -44,7 +52,10 @@ public class IngestionServiceImpl implements IngestionService {
             EmbeddingModel embeddingModel,
             TextSplitterService textSplitterService,
             IngestionStatusUpdater statusUpdater,
-            AcademicIngestionService academicIngestionService) {
+            AcademicIngestionService academicIngestionService,
+            RagProperties ragProperties,
+            ObjectProvider<WorkflowExecutionCoordinator> ingestionCoordinatorProvider,
+            ObjectProvider<WorkflowReconciliationService> ingestionReconciliationProvider) {
         this.documentsMapper = documentsMapper;
         this.documentChunkMapper = documentChunkMapper;
         this.minioService = minioService;
@@ -53,6 +64,9 @@ public class IngestionServiceImpl implements IngestionService {
         this.textSplitterService = textSplitterService;
         this.statusUpdater = statusUpdater;
         this.academicIngestionService = academicIngestionService;
+        this.ragProperties = ragProperties;
+        this.ingestionCoordinatorProvider = ingestionCoordinatorProvider;
+        this.ingestionReconciliationProvider = ingestionReconciliationProvider;
     }
 
     @Override
@@ -66,15 +80,44 @@ public class IngestionServiceImpl implements IngestionService {
             statusUpdater.markTaskFailed(taskId, "文档不存在");
             return;
         }
-        // 3.检查文档是否已处理过
+        // 3. 分流：先确定 parseMode（纯解析、无副作用），它决定是否需要"Graph 对账优先"
+        ParseMode parseMode = ParseMode.from(knowledgeDocument.getParseMode());
+        boolean graphIngestion = parseMode == ParseMode.ACADEMIC
+                && ragProperties.getWorkflow().getIngestion().isEnabled();
+        log.info("入库分流: documentId={}, parseMode={}, graphIngestion={}",
+                documentId, parseMode, graphIngestion);
+
+        // 4. 图入库路径（Step 5）：先做三态对账再决定是否执行。
+        //    必须在 indexed 短路【之前】—— 否则"Persist 已提交、Graph 未 END、task 未 success"
+        //    会被永久跳过 Finalize（step5 §3-A3 强制验收项）。
+        if (graphIngestion) {
+            try {
+                WorkflowReconciliationService reconciliation = ingestionReconciliationProvider.getIfAvailable();
+                WorkflowExecutionCoordinator coordinator = ingestionCoordinatorProvider.getIfAvailable();
+                if (reconciliation == null || coordinator == null) {
+                    throw new IllegalStateException("rag.workflow.ingestion.enabled=true 但图组件未装配"
+                            + "（检查 IngestionGraphConfig 的条件与属性名）");
+                }
+                // 统一入口（与恢复调度器共用同一实现）：
+                // 无 checkpoint ⇒ 首次执行；Graph 未 END ⇒ resume 补完；
+                // Graph 已 END ⇒ 对齐 task 状态（幂等）；已 failed ⇒ 不自动重跑。
+                WorkflowReconciliationService.Result result =
+                        reconciliation.recoverOrExecute(knowledgeDocument, taskId);
+                log.info("ACADEMIC 图对账/执行: taskId={}, outcome={}, detail={}",
+                        taskId, result.outcome(), result.detail());
+            } catch (Exception e) {
+                String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                statusUpdater.updateDocumentStatus(documentId, "failed", 100, message);
+                statusUpdater.markTaskFailed(taskId, message);
+            }
+            return;
+        }
+
+        // 5. 旧链路（GENERIC；或 ACADEMIC 未开启图开关）：行为与 Step 4 之前完全一致
         if ("indexed".equals(knowledgeDocument.getStatus())) {
             statusUpdater.markTaskSuccess(taskId);
             return;
         }
-
-        // 4. 分流：ACADEMIC → 学术链路；否则 GENERIC（skill §9）
-        ParseMode parseMode = ParseMode.from(knowledgeDocument.getParseMode());
-        log.info("入库分流: documentId={}, parseMode={}", documentId, parseMode);
         try {
             if (parseMode == ParseMode.ACADEMIC) {
                 // 学术链路自己管理 parsing/chunking/embedding/indexed 与任务状态
@@ -182,6 +225,10 @@ public class IngestionServiceImpl implements IngestionService {
             param.setChunkIndex(i);
             param.setContent(segment.text());
             param.setEmbedding(VectorUtils.toPgVector(embedding.vector()));
+            // 修复（Step 5 排查中发现）：document_chunks.metadata 为 NOT NULL（DDL 默认 '{}'::jsonb），
+            // 但本 INSERT 会【显式】写入 metadata 列 ⇒ 传 null 时数据库默认值不生效，直接违反 NOT NULL，
+            // 导致 GENERIC 入库必然失败。GENERIC 链路没有长尾字段，显式写空 JSON。
+            param.setMetadata("{}");
 
             documentChunkMapper.insertChunkWithEmbedding(param);
         }

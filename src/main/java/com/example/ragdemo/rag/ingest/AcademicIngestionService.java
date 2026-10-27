@@ -3,7 +3,6 @@ package com.example.ragdemo.rag.ingest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +58,8 @@ public class AcademicIngestionService {
     private final IngestionStatusUpdater statusUpdater;
     private final ObjectMapper objectMapper;
     private final RagProperties ragProperties;
+    /** Step 4 提取出的共享 manifest 构建器：与入库图逐字一致，避免格式漂移 */
+    private final ChunkManifestBuilder chunkManifestBuilder;
 
     public AcademicIngestionService(MinioService minioService,
             CanonicalDocumentPipeline canonicalDocumentPipeline,
@@ -69,7 +70,8 @@ public class AcademicIngestionService {
             ArtifactKeyBuilder artifactKeyBuilder,
             IngestionStatusUpdater statusUpdater,
             ObjectMapper objectMapper,
-            RagProperties ragProperties) {
+            RagProperties ragProperties,
+            ChunkManifestBuilder chunkManifestBuilder) {
         this.minioService = minioService;
         this.canonicalDocumentPipeline = canonicalDocumentPipeline;
         this.sectionAwareChunker = sectionAwareChunker;
@@ -80,6 +82,7 @@ public class AcademicIngestionService {
         this.statusUpdater = statusUpdater;
         this.objectMapper = objectMapper;
         this.ragProperties = ragProperties;
+        this.chunkManifestBuilder = chunkManifestBuilder;
     }
 
     /**
@@ -181,23 +184,9 @@ public class AcademicIngestionService {
         }
     }
 
-    /** chunk manifest：只记关键字段，便于人工对照分块结果。 */
+    /** chunk manifest：委托共享实现（Step 4 提取，保证与入库图格式一致）。 */
     private List<Map<String, Object>> buildChunkManifest(List<AcademicChunk> chunks) {
-        List<Map<String, Object>> manifest = new ArrayList<>(chunks.size());
-        for (AcademicChunk chunk : chunks) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("chunkId", chunk.getChunkId());
-            item.put("chunkType", chunk.getChunkType());
-            item.put("order", chunk.getOrder());
-            item.put("tokenCount", chunk.getTokenCount());
-            item.put("sectionPath", chunk.getSectionPath());
-            item.put("startPage", chunk.getStartPage());
-            item.put("endPage", chunk.getEndPage());
-            item.put("sourceBlockIds", chunk.getSourceBlockIds());
-            item.put("contentHash", chunk.getContentHash());
-            manifest.add(item);
-        }
-        return manifest;
+        return chunkManifestBuilder.build(chunks);
     }
 
     /** 供调用方读取 canonical JSON 节点（避免重复序列化两次）。 */

@@ -100,23 +100,51 @@ public class ConversationMemoryServiceImpl implements ConversationMemoryService 
         return conversationMapper.selectRecentConversations(limit);
     }
 
+    /** 结构化状态的固定七字段（与 prompt/state-prompt.txt 一致）。 */
+    private static final java.util.List<String> SESSION_STATE_KEYS = java.util.List.of(
+            "topic", "method", "dataset", "metric", "finding", "task", "keyTerms");
+    private static final String DEFAULT_SESSION_STATE =
+            "{\"topic\":null,\"method\":null,\"dataset\":null,\"metric\":null,\"finding\":null,\"task\":null,\"keyTerms\":[]}";
+    /** prompt 的目标是 ≤300 字；代码侧兜底上限。 */
+    private static final int SUMMARY_MAX_CHARS = 300;
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+
     @Override
     public void updateSummary(String conversationId, String oldestQuestion, String oldestAnswer) {
-        ChatConversation conv = conversationMapper.selectById(conversationId);
-        String oldSummary = conv.getSummary() != null ? conv.getSummary() : "无";
+        try {
+            ChatConversation conv = conversationMapper.selectById(conversationId);
+            if (conv == null) {
+                log.warn("[memory] 摘要更新跳过：会话不存在 conversationId={}", conversationId);
+                return;
+            }
+            String oldSummary = conv.getSummary() != null ? conv.getSummary() : "无";
 
-        String prompt = summaryPromptTemplate
-                .replace("{oldSummary}", oldSummary)
-                .replace("{question}", oldestQuestion)
-                .replace("{answer}", oldestAnswer);
+            String prompt = summaryPromptTemplate
+                    .replace("{oldSummary}", oldSummary)
+                    .replace("{question}", oldestQuestion)
+                    .replace("{answer}", oldestAnswer);
 
-        ChatRequest chatRequest = ChatRequest.builder()
-                .messages(new UserMessage(prompt))
-                .build();
-        String newSummary = chatModelFactory.getModel(null).chat(chatRequest).aiMessage().text();
-        conversationMapper.updateSummary(conversationId, newSummary);
+            ChatRequest chatRequest = ChatRequest.builder()
+                    .messages(new UserMessage(prompt))
+                    .build();
+            String newSummary = chatModelFactory.getModel(null).chat(chatRequest).aiMessage().text();
+            if (newSummary == null || newSummary.isBlank()) {
+                log.warn("[memory] 模型返回空摘要，保留旧摘要: conversationId={}", conversationId);
+                return;
+            }
+            if (newSummary.length() > SUMMARY_MAX_CHARS) {
+                // prompt 目标是 ≤300 字；代码侧兜底防膨胀（不影响已有摘要语义）
+                newSummary = newSummary.substring(0, SUMMARY_MAX_CHARS);
+            }
+            conversationMapper.updateSummary(conversationId, newSummary);
 
-        log.info("更新摘要: conversationId={}, length={}", conversationId, newSummary.length());
+            log.info("[memory] 摘要已更新: conversationId={}, length={}", conversationId, newSummary.length());
+        } catch (RuntimeException e) {
+            // 记忆降级：摘要失败绝不影响已经生成的回答
+            log.warn("[memory] 摘要更新失败（已降级，不影响回答）: conversationId={}, type={}", conversationId,
+                    e.getClass().getSimpleName());
+        }
     }
 
     @Override
@@ -132,21 +160,70 @@ public class ConversationMemoryServiceImpl implements ConversationMemoryService 
 
     @Override
     public void updateSessionState(String conversationId, String question, String answer) {
-        ChatConversation conv = conversationMapper.selectById(conversationId);
-        String oldState = conv.getSessionState() != null ? conv.getSessionState()
-                : "{\"topic\":null,\"method\":null,\"dataset\":null,\"metric\":null,\"finding\":null,\"task\":null,\"keyTerms\":[]}";
+        try {
+            ChatConversation conv = conversationMapper.selectById(conversationId);
+            if (conv == null) {
+                log.warn("[memory] 状态更新跳过：会话不存在 conversationId={}", conversationId);
+                return;
+            }
+            String oldState = conv.getSessionState() != null ? conv.getSessionState() : DEFAULT_SESSION_STATE;
 
-        String prompt = statePromptTemplate
-                .replace("{oldState}", oldState)
-                .replace("{question}", question)
-                .replace("{answer}", answer);
-        ChatRequest chatRequest = ChatRequest.builder()
-                .messages(new UserMessage(prompt))
-                .build();
-        String newState = chatModelFactory.getModel(null).chat(chatRequest).aiMessage().text();
-        conversationMapper.updateSessionState(conversationId, newState);
+            String prompt = statePromptTemplate
+                    .replace("{oldState}", oldState)
+                    .replace("{question}", question)
+                    .replace("{answer}", answer);
+            ChatRequest chatRequest = ChatRequest.builder()
+                    .messages(new UserMessage(prompt))
+                    .build();
+            String newState = chatModelFactory.getModel(null).chat(chatRequest).aiMessage().text();
+            String validated = validateSessionState(newState, oldState);
+            conversationMapper.updateSessionState(conversationId, validated);
 
-        log.info("更新状态: conversationId={}, state={}", conversationId, newState);
+            log.info("[memory] 状态已更新: conversationId={}, schemaKeys={}", conversationId, SESSION_STATE_KEYS.size());
+        } catch (RuntimeException e) {
+            // 记忆降级：状态更新失败不得影响已生成回答（chat_messages 已提交）
+            log.warn("[memory] 状态更新失败（已降级，不影响回答）: conversationId={}, type={}", conversationId,
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * 结构化会话状态校验（对应 prompt/state-prompt.txt 的固定七字段契约）：
+     * 必须是 JSON 对象、只保留 topic/method/dataset/metric/finding/task/keyTerms、keyTerms 必须是数组。
+     * <p>任何不合法输入 ⇒ <b>保留旧状态</b>（不覆盖、不污染），并记录 warn —— 降级而非抛错。
+     */
+    static String validateSessionState(String candidate, String previousState) {
+        if (candidate == null || candidate.isBlank()) {
+            log.warn("[memory] session_state 为空，保留旧状态");
+            return previousState;
+        }
+        try {
+            com.fasterxml.jackson.databind.JsonNode node = JSON.readTree(candidate);
+            if (!node.isObject()) {
+                log.warn("[memory] session_state 不是 JSON 对象，保留旧状态");
+                return previousState;
+            }
+            com.fasterxml.jackson.databind.node.ObjectNode out = JSON.createObjectNode();
+            for (String key : SESSION_STATE_KEYS) {
+                com.fasterxml.jackson.databind.JsonNode value = node.get(key);
+                if (value == null || value.isNull()) {
+                    out.putNull(key);
+                } else {
+                    out.set(key, value);
+                }
+            }
+            if (!out.get("keyTerms").isArray()) {
+                out.putArray("keyTerms");
+            }
+            String normalized = JSON.writeValueAsString(out);
+            if (!normalized.equals(candidate)) {
+                log.info("[memory] session_state 已按固定 schema 归一（丢弃多余字段/修正类型）");
+            }
+            return normalized;
+        } catch (Exception e) {
+            log.warn("[memory] session_state 非法 JSON，保留旧状态: type={}", e.getClass().getSimpleName());
+            return previousState;
+        }
     }
 
     @Override

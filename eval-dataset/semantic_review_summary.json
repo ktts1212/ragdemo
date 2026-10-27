@@ -1,0 +1,131 @@
+{
+  "reviewed": 120,
+  "tiers": {
+    "SEMANTIC_VERIFIED": 109,
+    "REVIEW_REQUIRED": 11
+  },
+  "per_paper": [
+    {
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:0cad648d841293e5",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:154ac83058733fec",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:16a683d77366810b",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:1fe855927b96f87f",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:42250d9bd47e888a",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:53384eda3bd3967c",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 6,
+        "REVIEW_REQUIRED": 2
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:63fa641631be5c0d",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:955277e90cb402a0",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:9670ffc08b269577",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 6,
+        "REVIEW_REQUIRED": 2
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:ab330f69506f2404",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 8
+      },
+      "rows": 8
+    },
+    {
+      "paper_id": "sha256:cc2482a565e4a047",
+      "tiers": {
+        "SEMANTIC_VERIFIED": 7,
+        "REVIEW_REQUIRED": 1
+      },
+      "rows": 8
+    }
+  ],
+  "duplicate_groups": [
+    {
+      "question_id": "sha256_cc2482a565e4a047-q04",
+      "duplicate_of": "sha256_cc2482a565e4a047-q07",
+      "paper_id": "sha256:cc2482a565e4a047"
+    }
+  ],
+  "visual_todo": 19
+}

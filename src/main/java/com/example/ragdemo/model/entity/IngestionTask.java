@@ -48,4 +48,24 @@ public class IngestionTask {
 
     /** 更新时间 */
     private LocalDateTime updatedAt;
+
+    // ==================== Step 5：租约 / 原子抢占 / fencing ====================
+
+    /** 当前持有执行权的 Worker 唯一 ID（每次启动/执行可区分） */
+    private String leaseOwner;
+
+    /** 租约到期时间（以数据库时钟为基准）；过期后可被其他 Worker 原子抢占 */
+    private LocalDateTime leaseExpiresAt;
+
+    /** fencing token：每次成功抢占单调递增；业务关键写入必须校验 owner + token */
+    private Long fencingToken;
+
+    /** 已尝试次数（用于有限重试与终态判定） */
+    private Integer attemptCount;
+
+    /** 瞬时错误的下次可重试时间 */
+    private LocalDateTime nextRetryAt;
+
+    /** 结构化错误码（用于区分永久错误与瞬时错误） */
+    private String lastErrorCode;
 }

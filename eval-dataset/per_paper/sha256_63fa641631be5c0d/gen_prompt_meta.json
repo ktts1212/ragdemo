@@ -1,0 +1,19 @@
+{
+  "paper_id": "sha256:63fa641631be5c0d",
+  "pages_sent": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "chars_sent": 23947,
+  "model": "deepseek-v4-flash",
+  "temperature": "0.2",
+  "generated_at": "2026-10-16T01:15:50+0800"
+}

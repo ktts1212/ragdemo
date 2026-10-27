@@ -1,0 +1,20 @@
+{
+  "paper_id": "sha256:16a683d77366810b",
+  "candidates": 8,
+  "verified": 8,
+  "review_required": 0,
+  "rejected": 0,
+  "by_category": {
+    "FACT": 1,
+    "NUMERIC": 2,
+    "METHOD": 2,
+    "EVIDENCE_LOCATE": 1,
+    "SYNTHESIS": 1,
+    "UNANSWERABLE": 1
+  },
+  "verifier": "programmatic_page_text_match (independent of generator)",
+  "limitations": [
+    "text-level verification only: visual (image) table/figure checks are NOT performed",
+    "answer-vs-question leakage and semantic duplication are not yet checked (needs the LLM checker pass)"
+  ]
+}

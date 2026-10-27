@@ -1,0 +1,9 @@
+{
+  "paper_id": "sha256:49b711a100fc7ccc",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "elapsed_seconds": 41.6,
+  "prompt_tokens": 5266,
+  "completion_tokens": 8546,
+  "total_tokens": 13812,
+  "observable": true
+}

@@ -1,0 +1,576 @@
+{
+  "core_total": 110,
+  "semantic_verified": 91,
+  "visual_pending": 19,
+  "by_category": {
+    "FACT": 17,
+    "METHOD": 30,
+    "NUMERIC": 28,
+    "EVIDENCE_LOCATE": 14,
+    "SYNTHESIS": 15,
+    "UNANSWERABLE": 6
+  },
+  "by_difficulty": {
+    "easy": 31,
+    "medium": 64,
+    "hard": 15
+  },
+  "missing_required_fields": [],
+  "bad_evidence_refs": [],
+  "questions_with_verified_kb_mapping": 0,
+  "questions_without_kb_mapping": 110,
+  "blocked_by_kb": [
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q01",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q02",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q03",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q04",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q05",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q06",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q07",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0022d6a3ad28f994-q08",
+      "paper_id": "sha256:0022d6a3ad28f994",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q01",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q02",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q03",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q04",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q05",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q06",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_0cad648d841293e5-q08",
+      "paper_id": "sha256:0cad648d841293e5",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q01",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q02",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q03",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q04",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q05",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q06",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_154ac83058733fec-q07",
+      "paper_id": "sha256:154ac83058733fec",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q01",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q02",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q03",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q04",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q05",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q06",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q07",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_16a683d77366810b-q08",
+      "paper_id": "sha256:16a683d77366810b",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q01",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q02",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q03",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q04",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q05",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q06",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_1fe855927b96f87f-q07",
+      "paper_id": "sha256:1fe855927b96f87f",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q01",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q02",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q03",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q04",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q05",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q06",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_42250d9bd47e888a-q07",
+      "paper_id": "sha256:42250d9bd47e888a",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q01",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q02",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q03",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q04",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q05",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q06",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q07",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_49b711a100fc7ccc-q08",
+      "paper_id": "sha256:49b711a100fc7ccc",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q01",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q02",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q03",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q04",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q05",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q06",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_53384eda3bd3967c-q07",
+      "paper_id": "sha256:53384eda3bd3967c",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q01",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q02",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q03",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q04",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q05",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q06",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q07",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_63fa641631be5c0d-q08",
+      "paper_id": "sha256:63fa641631be5c0d",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q01",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q02",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q03",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q04",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q05",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q06",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_66d299a9b0d526eb-q07",
+      "paper_id": "sha256:66d299a9b0d526eb",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q01",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q02",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q03",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q04",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q05",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q06",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_955277e90cb402a0-q07",
+      "paper_id": "sha256:955277e90cb402a0",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q01",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q02",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q03",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q04",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q06",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_9670ffc08b269577-q08",
+      "paper_id": "sha256:9670ffc08b269577",
+      "kb_mapping_status": "AMBIGUOUS"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q01",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q02",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q03",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q04",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q05",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q06",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q07",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_ab330f69506f2404-q08",
+      "paper_id": "sha256:ab330f69506f2404",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q01",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q02",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q03",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q04",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q05",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q06",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q07",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_c2b6d1b8aac08a98-q08",
+      "paper_id": "sha256:c2b6d1b8aac08a98",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q01",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q02",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q03",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q04",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q05",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q06",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    },
+    {
+      "question_id": "sha256_cc2482a565e4a047-q07",
+      "paper_id": "sha256:cc2482a565e4a047",
+      "kb_mapping_status": "NOT_FOUND"
+    }
+  ],
+  "gold_modified": false,
+  "note": "read-only check; the 91 SEMANTIC_VERIFIED questions are the intended core; KB mapping is blocked until the eval KB is populated (no guessing)"
+}

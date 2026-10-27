@@ -24,6 +24,35 @@ public class RagProperties {
     /** 文档解析/入库路由配置（skill §9） */
     private Parser parser = new Parser();
 
+    /** 工作流（图化入库）配置（step4 §7）：默认关闭，旧链路行为不变 */
+    private Workflow workflow = new Workflow();
+
+    @Data
+    public static class Workflow {
+
+        private Ingestion ingestion = new Ingestion();
+
+        @Data
+        public static class Ingestion {
+            /** 是否启用 ACADEMIC 入库图（false ⇒ 走原链路） */
+            private boolean enabled = false;
+            /** 是否启用 PostgreSQL checkpoint 持久化（本步骤恒为 true；仅用于对照实验） */
+            private boolean checkpointEnabled = true;
+            /** Step 5：任务租约 TTL（秒）。须大于单节点最长耗时（Marker 解析），靠续租覆盖 */
+            private long leaseTtlSeconds = 120;
+            /** Step 5：瞬时错误进入 retry_wait 的退避秒数 */
+            private long retryBackoffSeconds = 10;
+            /** Step 5：是否启用自动恢复调度器（<b>默认关闭</b>；test profile 打开并缩短间隔） */
+            private boolean recoveryEnabled = false;
+            /** Step 5：恢复扫描间隔（毫秒） */
+            private long recoveryIntervalMs = 30_000L;
+            /** Step 5：每轮扫描最多取多少候选任务 */
+            private int recoveryBatchSize = 10;
+            /** Step 5：恢复并发上限（避免同时启动过多图执行） */
+            private int recoveryMaxConcurrency = 2;
+        }
+    }
+
     @Data
     public static class Parser {
         /** 解析后端：marker（主）/ grobid（legacy） */

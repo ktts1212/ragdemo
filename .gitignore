@@ -82,3 +82,9 @@ src/main/resources/skills/
 .env
 *.env
 application-local.yml
+
+reports/
+skills/
+
+
+eval-dataset/work/

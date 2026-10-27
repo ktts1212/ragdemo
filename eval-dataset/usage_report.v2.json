@@ -1,0 +1,16 @@
+{
+  "generation": {
+    "calls": 15,
+    "total_tokens": 267914
+  },
+  "semantic_review": {
+    "calls": 15,
+    "total_tokens": 214845
+  },
+  "programmatic_verification": {
+    "calls": 0,
+    "total_tokens": 0
+  },
+  "total_tokens": 482759,
+  "observable": true
+}
