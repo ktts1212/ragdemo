@@ -2,12 +2,12 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: local
   application:
     name: ragdemo
   datasource:
     url: jdbc:postgresql://localhost:15432/ragdemo
-    username: liyong
-    password: 123456
     driver-class-name: org.postgresql.Driver
   servlet:
     multipart:
@@ -30,8 +30,6 @@ spring:
 
 minio:
   endpoint: http://localhost:19000
-  access-key: minioadmin
-  secret-key: minioadmin
   bucket: rag-documents
 
 rag:
@@ -40,7 +38,7 @@ rag:
     deepseek:
       provider: openai-compatible
       base-url: https://api.deepseek.com
-      api-key: sk-c81eb996c1ec44a893921d5c2b6cd7b4
+      api-key: ""
       model-name: deepseek-v4-flash
       temperature: 0.2
 
